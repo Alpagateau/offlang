@@ -1,0 +1,33 @@
+#include <stdlib.h>
+#include "arena.h"
+
+struct arena_allocator {
+  size_t capacity;
+  size_t cursor;
+  char*  buffer;
+};
+
+arena_t* arena_new(size_t size, arena_flag_t flags)
+{
+  arena_t* a = (arena_t*)malloc(sizeof(*a));
+  a->capacity = size;
+  a->cursor = 0;
+  a->buffer = (char*)malloc(sizeof(char) * size);
+  return a;
+}
+
+void* arena_alloc(arena_t* arena, size_t size)
+{
+  if(arena->cursor + size >= arena->capacity)
+    return NULL;
+  
+  char* ptr = arena->buffer + arena->cursor;
+  arena->cursor += size;
+  return ptr;
+}
+
+void arena_free(arena_t* a)
+{
+  free(a->buffer);
+  free(a);
+}
