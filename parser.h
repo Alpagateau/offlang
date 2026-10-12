@@ -17,11 +17,18 @@ typedef struct {
 void parser_set_arena(arena_t* a);
 bool parser_expect(lexer_t* l, lexem_kind_t type);
 
+//Simple expressions
 parse_result parse_integer(lexer_t* l);
 parse_result parse_variable(lexer_t* l);
 parse_result parse_bi_op_factor(lexer_t* l);
 parse_result parse_bi_op_term(lexer_t* l);
 
 parse_result parse_expr(lexer_t* l);
+
+//Statements
+parse_result parse_declaration(lexer_t* l);
+parse_result parse_assignment(lexer_t* l);
+
+parse_result parse_statement(lexer_t* l);
 
 #endif

@@ -7,11 +7,24 @@
 
 typedef enum {
   LX_ERR = 0,
+  //Basic expr
   LX_INT,
   LX_IDENT,
+  LX_OP,
+
+  //Keywords
+  LX_TYPE_INT,
+
+  //Punctuation
+  LX_COMMA,
+  LX_EQ,
+  LX_SEMICOLUMN,
   LX_OPAR,
   LX_CPAR,
-  LX_OP
+  LX_OSQR_BRA,
+  LX_CSQR_BRA,
+  LX_OCRL_BRA,
+  LX_CCRL_BRA,
 }lexem_kind_t;
 
 typedef struct
@@ -34,6 +47,16 @@ typedef struct
   lexem_t next_lexem;
 }lexer_t;
 
+typedef struct {
+  char character;
+  lexem_kind_t kind;
+}char_lexem_pair_t;
+
+typedef struct {
+  const char* keyword;
+  lexem_kind_t kind;
+}keyword_lexem_pair_t;
+
 void lexer_init(FILE* f, lexer_t* l);
 
 int lexer_peek(lexer_t* l);
@@ -43,7 +66,7 @@ bool lexer_is_operator(int c);
 void lexer_consume_spaces(lexer_t* l);
 
 lexem_t lexer_lex_integer(lexer_t* l);
-lexem_t lexer_lex_identifier(lexer_t* l);
+lexem_t lexer_lex_kw_identifier(lexer_t* l);
 lexem_t lexer_lex_operator(lexer_t* l);
 
 lexem_t lexer_next_token(lexer_t* l);

@@ -7,11 +7,11 @@
 int compile_per_file(FILE* file)
 {
   lexer_t lexer;
-  arena_t* a = arena_new(5000, 0);
+  arena_t* a = arena_new(10000, 0);
   parser_set_arena(a);
   lexer_init(file, &lexer);
 
-  parse_result res = parse_expr(&lexer);
+  parse_result res = parse_statement(&lexer);
   if(res.is_ok)
   {
     print_ast(res.result);

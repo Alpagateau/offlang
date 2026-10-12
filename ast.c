@@ -9,6 +9,7 @@ struct ast_node {
 
   union {
     int ivar;
+    char identifier[64];
 
     struct {
       ast_op_t op;
@@ -16,7 +17,15 @@ struct ast_node {
       anode_t *rchild;
     } binary;
 
-    char identifier[64];
+    struct {
+      char identifier[64];
+      anode_t* expr;
+    } declaration;
+
+    struct {
+      anode_t* lval;
+      anode_t* expr;
+    }assignment;
   };
 };
 
@@ -43,6 +52,22 @@ anode_t *ast_new_binary(arena_t *arena, ast_op_t op, anode_t *lc, anode_t *rc) {
   n->binary.op = op;
   n->binary.lchild = lc;
   n->binary.rchild = rc;
+  return n;
+}
+
+anode_t *ast_new_declaration(arena_t *arena, const char* name, anode_t* expr)
+{
+  anode_t *n = ast_new(arena, DECLARATION);
+  n->declaration.expr = expr;
+  strcpy(n->declaration.identifier, name);
+  return n;
+}
+
+anode_t *ast_new_assigment(arena_t *arena, anode_t* lv, anode_t* expr)
+{
+  anode_t *n = ast_new(arena, ASSIGNMENT);
+  n->assignment.lval = lv;
+  n->assignment.expr = expr;
   return n;
 }
 
@@ -117,6 +142,17 @@ anode_t* ast_simplify_expr(arena_t* arena, anode_t* ast)
       }
       return ast;
       } 
+    case DECLARATION:
+      {
+        if(ast->declaration.expr != NULL)
+          ast->declaration.expr = ast_simplify_expr(arena, ast->declaration.expr);
+        return ast;
+      } 
+    case ASSIGNMENT:
+      {
+        ast->assignment.lval = ast_simplify_expr(arena, ast->assignment.lval);
+        ast->assignment.expr = ast_simplify_expr(arena, ast->assignment.expr);
+      }
   }
   return NULL;
 }
@@ -156,6 +192,21 @@ void _print_ast(anode_t* ast, size_t depth)
       _print_op(ast->binary.op);
       _print_ast(ast->binary.rchild, depth);
       printf(")");
+      break;
+    case DECLARATION:
+      {
+      printf("int %s", ast->declaration.identifier);
+      if(ast->declaration.expr != NULL)
+      {
+        printf(" = ");
+        _print_ast(ast->declaration.expr, depth);
+      }
+      }
+      break;
+    case ASSIGNMENT:
+      _print_ast(ast->assignment.lval, depth);
+      printf(" = ");
+      _print_ast(ast->assignment.expr, depth);
       break;
   }
 }

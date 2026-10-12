@@ -4,6 +4,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+char_lexem_pair_t single_char_tokens[] = {
+  {'=', LX_EQ},
+  {',', LX_COMMA},
+  {';', LX_COMMA},
+  {'(', LX_OPAR},
+  {')', LX_CPAR},
+  {'[', LX_OSQR_BRA},
+  {']', LX_CSQR_BRA},
+  {'{', LX_OCRL_BRA},
+  {'}', LX_CCRL_BRA},
+  {0, LX_ERR}
+};
+
+keyword_lexem_pair_t keyword_tokens[] = {
+  {"int", LX_TYPE_INT},
+  {NULL, LX_ERR}
+};
+
 void lexer_init(FILE* f, lexer_t* l)
 {
   l->input_file = f;
@@ -83,7 +101,7 @@ lexem_t lexer_lex_integer(lexer_t* l)
   return lex;
 }
 
-lexem_t lexer_lex_identifier(lexer_t* l)
+lexem_t lexer_lex_kw_identifier(lexer_t* l)
 {
   char buffer[64] = {};
   
@@ -109,6 +127,19 @@ lexem_t lexer_lex_identifier(lexer_t* l)
     }
     buffer[idx++] = c;
     c = lexer_peek(l);
+  }
+
+  for(int i = 0; keyword_tokens[i].keyword != NULL; i++)
+  {
+    if(strcmp(keyword_tokens[i].keyword, buffer) == 0)
+    {  
+      lexem_t lex = (lexem_t){
+        .kind = keyword_tokens[i].kind,
+        .char_num = char_num,
+        .line_num = line_num,
+      };
+      return lex;
+    }
   }
 
   lexem_t lex = (lexem_t){
@@ -178,29 +209,23 @@ lexem_t lexer_next_token(lexer_t* l)
   }
   if(isalnum(c) || c == '_')
   {
-    return lexer_lex_identifier(l);
+    return lexer_lex_kw_identifier(l);
   }
   if(lexer_is_operator(c))
   {
     return lexer_lex_operator(l);
   }
-  if(c == '(')
+  for(int i = 0; single_char_tokens[i].character != 0; i++)
   {
-    lexer_consume(l);
-    return (lexem_t){
-      .kind = LX_OPAR,
-      .line_num = l->line_num,
-      .char_num = l->char_num
-    };
-  }
-  if(c == ')')
-  {
-    lexer_consume(l);
-    return (lexem_t){
-      .kind = LX_CPAR,
-      .line_num = l->line_num,
-      .char_num = l->char_num
-    };
+    if(c == single_char_tokens[i].character)
+    {
+      lexer_consume(l);
+      return (lexem_t){
+        .kind = single_char_tokens[i].kind,
+        .line_num = l->line_num,
+        .char_num = l->char_num
+      };
+    }
   }
   return (lexem_t){.kind = LX_ERR};
 }
@@ -208,6 +233,15 @@ lexem_t lexer_next_token(lexer_t* l)
 void lexer_print_lexem(lexem_t lexem)
 {
   printf("<(%zu:%zu) ", lexem.line_num, lexem.char_num);
+
+  for(int i = 0; single_char_tokens[i].character != 0; i++)
+  {
+    if(lexem.kind == single_char_tokens[i].kind)
+    {
+      printf("%c >", single_char_tokens[i].character);
+    }
+  }
+
   switch(lexem.kind)
   {
     case LX_ERR:
@@ -219,14 +253,13 @@ void lexer_print_lexem(lexem_t lexem)
     case LX_IDENT:
       printf("ident : %s>", lexem.identifier);
       break;
-    case LX_OPAR:
-      printf("open parenthesis>");
-      break;
-    case LX_CPAR:
-      printf("closed parenthesis>");
-      break;
     case LX_OP:
       printf("operator>");
+      break;
+    case LX_TYPE_INT:
+      printf("type int>");
+      break;
+    default:
       break;
   }
 }
