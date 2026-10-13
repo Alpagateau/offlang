@@ -25,6 +25,9 @@ parse_result parse_bi_op_term(lexer_t *l);
 
 parse_result parse_expr(lexer_t *l);
 
+// Type system
+parse_result parse_type(lexer_t* l);
+
 // Statements
 parse_result parse_declaration(lexer_t *l);
 parse_result parse_assignment(lexer_t *l);

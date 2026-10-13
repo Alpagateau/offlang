@@ -130,14 +130,30 @@ parse_result parse_expr(lexer_t *l) {
   return left;
 }
 
+parse_result parse_type(lexer_t* l)
+{
+  if(!parser_expect(l, LX_TYPE_INT))
+  {
+    return (parse_result) {
+      .err = "Need a typename for a type",
+      .is_ok = false
+    };
+  }
+  parse_result res;
+
+  lexer_consume_token(l);
+  if(parser_expect(l, LX_LT))
+  {
+    //TODO 
+  }
+  return res;
+}
+
 parse_result parse_declaration(lexer_t *l) {
   parse_result res;
-  if (!parser_expect(l, LX_TYPE_INT)) {
-    res.is_ok = false;
-    res.char_num = l->char_num;
-    res.line_num = l->line_num;
-    res.err = "Need a type to declare a variable";
-  }
+  parse_result t = parse_type(l);
+  if (!t.is_ok)
+    return t;
 
   lexer_consume_token(l);
 
@@ -160,7 +176,7 @@ parse_result parse_declaration(lexer_t *l) {
     expr_n = expr.result;
   }
   res.is_ok = true;
-  res.result = ast_new_declaration(arena, name.identifier, expr_n);
+  res.result = ast_new_declaration(arena, name.identifier,t.result, expr_n);
 
   return res;
 }

@@ -24,6 +24,7 @@ struct ast_node {
     }type_name;
 
     struct {
+      anode_t* t;
       anode_t* expr;
       char identifier[64];
     } declaration;
@@ -91,10 +92,11 @@ anode_t *ast_new_type(arena_t *arena, ast_native_type_t t,
   return n;
 }
 
-anode_t *ast_new_declaration(arena_t *arena, const char* name, anode_t* expr)
+anode_t *ast_new_declaration(arena_t *arena, const char* name,anode_t* t, anode_t* expr)
 {
   anode_t *n = ast_new(arena, DECLARATION);
   n->declaration.expr = expr;
+  n->declaration.t = t;
   strcpy(n->declaration.identifier, name);
   return n;
 }

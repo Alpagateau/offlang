@@ -28,13 +28,16 @@ int main()
 # What's needed to implement this
 
 - expression parser (x)
-- statement list / block ( )
+- statement list / block (x)
 
 A statement could be either : 
-- declaration        (type name | type name (= expr)?) (done (but no types yet))
-- an assignment      (name = expr)
+- declaration        (type name | type name (= expr)?)     (done (but no types yet))
+- an assignment      (name = expr)                         (done)
 - an if statement    (if expr statement (else statement)?) (done)
-- a while statement  (while expr statement) (done)
-- a defer statement  (defer statement)
-- a block statement  ({ list of statements })
+- a while statement  (while expr statement)                (done)
+- a defer statement  (defer statement)                     (done)
+- a block statement  ({ list of statements })              (done)
 
+A type could be either:
+- default type (int currently)
+- bound   type (int<number, number>)

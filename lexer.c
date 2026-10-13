@@ -5,9 +5,17 @@
 #include <string.h>
 
 char_lexem_pair_t single_char_tokens[] = {
-    {'=', LX_EQ},       {',', LX_COMMA},    {';', LX_COMMA},
-    {'(', LX_OPAR},     {')', LX_CPAR},     {'[', LX_OSQR_BRA},
-    {']', LX_CSQR_BRA}, {'{', LX_OCRL_BRA}, {'}', LX_CCRL_BRA},
+    {'=', LX_EQ},
+    {',', LX_COMMA},
+    {';', LX_COMMA},
+    {'(', LX_OPAR},     
+    {')', LX_CPAR},     
+    {'[', LX_OSQR_BRA},
+    {']', LX_CSQR_BRA}, 
+    {'{', LX_OCRL_BRA}, 
+    {'}', LX_CCRL_BRA},
+    {'<', LX_LT},
+    {'>', LX_GT},
     {0, LX_ERR}};
 
 keyword_lexem_pair_t keyword_tokens[] = {

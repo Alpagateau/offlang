@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define LEXER_BUFFER_SIZE 5
+#define LEXER_BUFFER_SIZE 8
 
 typedef enum {
   LX_ERR = 0,
@@ -31,6 +31,8 @@ typedef enum {
   LX_CSQR_BRA,
   LX_OCRL_BRA,
   LX_CCRL_BRA,
+  LX_LT,
+  LX_GT
 } lexem_kind_t;
 
 typedef struct {
