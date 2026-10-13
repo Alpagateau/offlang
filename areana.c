@@ -29,6 +29,11 @@ void* arena_alloc(arena_t* arena, size_t size)
   return ptr;
 }
 
+size_t arena_get_taken(arena_t* arena)
+{
+  return arena->cursor;
+}
+
 void arena_free(arena_t* a)
 {
   free(a->buffer);

@@ -16,7 +16,7 @@ arena_t* arena_new(size_t size, arena_flag_t flags);
 
 //allocates a region inside of an arena
 void* arena_alloc(arena_t* arena, size_t size);
-
+size_t arena_get_taken(arena_t* arena);
 //free and destroy the arena
 void arena_free(arena_t* a);
 

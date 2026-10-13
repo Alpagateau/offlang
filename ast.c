@@ -24,8 +24,8 @@ struct ast_node {
     }type_name;
 
     struct {
-      char identifier[64];
       anode_t* expr;
+      char identifier[64];
     } declaration;
 
     struct {
@@ -360,6 +360,7 @@ void _print_ast(anode_t* ast, size_t depth)
 
 void print_ast(anode_t* ast)
 {
+  printf("AST node size : %zu\n", sizeof(anode_t));
   _print_ast(ast, 1);
 }
 

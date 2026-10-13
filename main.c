@@ -13,7 +13,7 @@ int compile_per_file(FILE *file) {
   parse_result res = parse_statement(&lexer);
   if (res.is_ok) {
     print_ast(res.result);
-    printf("\n");
+    printf("\n <SIMPLIFIED> \n");
     anode_t *simple = ast_simplify_expr(a, res.result);
     print_ast(simple);
     printf("\n");
@@ -21,6 +21,7 @@ int compile_per_file(FILE *file) {
     printf("[PARSER ERROR](%zu:%zu) %s\n", res.line_num, res.char_num, res.err);
   }
 
+  printf("arena : space taken : %zu\n", arena_get_taken(a));
   arena_free(a);
 
   return 0;
