@@ -18,7 +18,6 @@ bool parser_expect(lexer_t *l, lexem_kind_t type) {
 }
 
 parse_result parse_integer(lexer_t *l) {
-  PARSE_LOG("parse int");
   parse_result res;
   if (parser_expect(l, LX_INT)) {
     res.is_ok = true;
@@ -36,7 +35,6 @@ parse_result parse_integer(lexer_t *l) {
 }
 
 parse_result parse_variable(lexer_t *l) {
-  PARSE_LOG("parse var");
   parse_result res;
   if (parser_expect(l, LX_IDENT)) {
     res.is_ok = true;
@@ -54,7 +52,6 @@ parse_result parse_variable(lexer_t *l) {
 }
 
 parse_result parse_bi_op_factor(lexer_t *l) {
-  PARSE_LOG("parse factor");
   parse_result res;
   lexem_t lex = lexer_peek_token(l);
 
@@ -88,7 +85,6 @@ parse_result parse_bi_op_factor(lexer_t *l) {
 }
 
 parse_result parse_bi_op_term(lexer_t *l) {
-  PARSE_LOG("parse term");
   parse_result left = parse_bi_op_factor(l);
   if (!left.is_ok)
     return left;
@@ -112,7 +108,6 @@ parse_result parse_bi_op_term(lexer_t *l) {
 }
 
 parse_result parse_expr(lexer_t *l) {
-  PARSE_LOG("parse expr");
   parse_result left = parse_bi_op_term(l);
   if (!left.is_ok)
     return left;
@@ -197,7 +192,6 @@ parse_result parse_assignment(lexer_t *l) {
 }
 
 parse_result parse_if(lexer_t *l) {
-  PARSE_LOG("parse if");
 
   parse_result res;
   if (!parser_expect(l, LX_IF)) {
@@ -209,14 +203,12 @@ parse_result parse_if(lexer_t *l) {
   }
 
   lexer_consume_token(l);
-  PARSE_LOG("parse condition");
   parse_result cond = parse_expr(l);
   if (!cond.is_ok)
     return cond;
-  printf("cond (%d): ", ast_get_type(cond.result));
-  print_ast(cond.result);
-  printf("\n");
-  PARSE_LOG("parse statement");
+  //printf("cond (%d): ", ast_get_type(cond.result));
+  //print_ast(cond.result);
+  //printf("\n");
   parse_result statement = parse_statement(l);
   if (!statement.is_ok)
     return statement;
@@ -225,7 +217,6 @@ parse_result parse_if(lexer_t *l) {
 
   anode_t *otherwise = NULL;
   if (parser_expect(l, LX_ELSE)) {
-    PARSE_LOG("parse else");
     lexer_consume_token(l);
     parse_result stmt = parse_statement(l);
     if (!stmt.is_ok)
@@ -240,7 +231,6 @@ parse_result parse_if(lexer_t *l) {
 }
 
 parse_result parse_while(lexer_t *l) {
-  PARSE_LOG("parse while");
 
   parse_result res;
   if (!parser_expect(l, LX_WHILE)) {
@@ -252,14 +242,12 @@ parse_result parse_while(lexer_t *l) {
   }
 
   lexer_consume_token(l);
-  PARSE_LOG("parse condition");
   parse_result cond = parse_expr(l);
   if (!cond.is_ok)
     return cond;
-  printf("cond (%d): ", ast_get_type(cond.result));
-  print_ast(cond.result);
-  printf("\n");
-  PARSE_LOG("parse statement");
+  //printf("cond (%d): ", ast_get_type(cond.result));
+  //print_ast(cond.result);
+  //printf("\n");
   parse_result statement = parse_statement(l);
   if (!statement.is_ok)
     return statement;

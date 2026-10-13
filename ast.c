@@ -173,7 +173,6 @@ anode_t* ast_get_rchild(anode_t* ast)
 
 anode_t* ast_simplify_expr(arena_t* arena, anode_t* ast)
 {
-  if(ast == NULL) return NULL;
   switch(ast->type)
   {
     case INT_LIT:
@@ -277,7 +276,10 @@ void _print_op(ast_op_t op)
 
 void _print_ast(anode_t* ast, size_t depth)
 {
-  if(ast == NULL) return;
+  if(ast == NULL) {
+    printf("[ NULL ]");
+    return;
+  }
   switch(ast->type)
   {
     case INT_LIT:
@@ -347,7 +349,7 @@ void _print_ast(anode_t* ast, size_t depth)
         _print_ast(list_get_at(ast->block.stmts, i), depth+1);
         printf("\n");
       }
-      for(int j = 0; j < depth; j++)
+      for(int j = 0; j < depth-1; j++)
       {
         printf("  ");
       }

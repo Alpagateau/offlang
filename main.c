@@ -14,8 +14,8 @@ int compile_per_file(FILE *file) {
   if (res.is_ok) {
     print_ast(res.result);
     printf("\n");
-    //anode_t *simple = ast_simplify_expr(a, res.result);
-    //print_ast(simple);
+    anode_t *simple = ast_simplify_expr(a, res.result);
+    print_ast(simple);
     printf("\n");
   } else {
     printf("[PARSER ERROR](%zu:%zu) %s\n", res.line_num, res.char_num, res.err);
