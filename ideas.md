@@ -33,8 +33,8 @@ int main()
 A statement could be either : 
 - declaration        (type name | type name (= expr)?) (done (but no types yet))
 - an assignment      (name = expr)
-- an if statement    (if expr statement (else statement)?)
-- a while statement  (while expr statement)
+- an if statement    (if expr statement (else statement)?) (done)
+- a while statement  (while expr statement) (done)
 - a defer statement  (defer statement)
 - a block statement  ({ list of statements })
 

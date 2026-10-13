@@ -1,1 +1,17 @@
-hello = 1 * (1 + _some_kind_of_var * 4)
+{
+  int somevar = 3
+  defer while 3 {
+    defer hello = 3 + 4
+    int hello = 3
+    if 1 
+      defer hello = 1 * (1 + _some_kind_of_var * 4) 
+    else {
+      int something = hello
+      int something_else = something + 1
+
+      if something {
+        int noooo
+      }
+    }
+  }
+}
