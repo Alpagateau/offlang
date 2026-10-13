@@ -81,6 +81,9 @@ lexem_t lexer_peek_token(lexer_t *l);
 lexem_t lexer_peek_at(lexer_t* l, size_t idx);
 lexem_t lexer_consume_token(lexer_t *l);
 
+size_t lexer_get_line(lexer_t* l);
+size_t lexer_get_char(lexer_t* l);
+
 void lexer_print_lexem(lexem_t lexem);
 void lexer_emit_error(const char *err, size_t line_num, size_t char_num);
 

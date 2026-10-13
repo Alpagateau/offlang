@@ -17,6 +17,7 @@ typedef struct {
 void parser_set_arena(arena_t *a);
 bool parser_expect(lexer_t *l, lexem_kind_t type);
 
+
 // Simple expressions
 parse_result parse_integer(lexer_t *l);
 parse_result parse_variable(lexer_t *l);

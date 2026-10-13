@@ -21,6 +21,7 @@ struct ast_node {
       ast_native_type_t type;
       int upper_limit;
       int lower_limit;
+      bool bounded;
     }type_name;
 
     struct {
@@ -83,12 +84,13 @@ anode_t *ast_new_binary(arena_t *arena, ast_op_t op, anode_t *lc, anode_t *rc) {
 }
 
 anode_t *ast_new_type(arena_t *arena, ast_native_type_t t, 
-    int min, int max)
+    int min, int max, bool bounded)
 { 
   anode_t *n = ast_new(arena, TYPE);
   n->type_name.type = t;
   n->type_name.upper_limit = max;
   n->type_name.lower_limit = min;
+  n->type_name.bounded = bounded;
   return n;
 }
 
@@ -298,13 +300,21 @@ void _print_ast(anode_t* ast, size_t depth)
       printf(")");
       break;
     case TYPE:
-      printf(
-          "int [%d, %d]", ast->type_name.lower_limit, 
-          ast->type_name.upper_limit);
+      {
+      if(ast->type_name.bounded){
+        printf(
+            "int <%d, %d>", ast->type_name.lower_limit, 
+            ast->type_name.upper_limit);
+        }
+      else{
+        printf("int");
+        }
+      }
       break;
     case DECLARATION:
       {
-      printf("int %s", ast->declaration.identifier);
+      _print_ast(ast->declaration.t, depth);
+      printf(" %s", ast->declaration.identifier);
       if(ast->declaration.expr != NULL)
       {
         printf(" = ");

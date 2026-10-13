@@ -201,6 +201,16 @@ lexem_t lexer_next_token(lexer_t *l) {
   return (lexem_t){.kind = LX_ERR};
 }
 
+size_t lexer_get_line(lexer_t* l)
+{
+  return lexer_peek_token(l).line_num;
+}
+
+size_t lexer_get_char(lexer_t* l)
+{
+  return lexer_peek_token(l).char_num;
+}
+
 void lexer_print_lexem(lexem_t lexem) {
   printf("<(%zu:%zu) ", lexem.line_num, lexem.char_num);
 

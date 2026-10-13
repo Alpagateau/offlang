@@ -6,8 +6,8 @@
     if 1 
       defer hello = 1 * (1 + _some_kind_of_var * 4) 
     else {
-      int something = hello
-      int something_else = something + 1
+      int<-4, 8> something = hello
+      int<0, 4> something_else = something + 1
 
       if something {
         int noooo
