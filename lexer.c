@@ -72,7 +72,11 @@ lexem_t lexer_lex_integer(lexer_t *l) {
 
   size_t line_num = l->line_num;
   size_t char_num = l->char_num;
-
+  if(c == '-' || c == '+')
+  {
+    buffer[idx++] = lexer_consume(l);
+  }
+  c = lexer_peek(l);
   while (isdigit(c)) {
     lexer_consume(l);
     if (idx >= 11) {
@@ -181,7 +185,7 @@ lexem_t lexer_next_token(lexer_t *l) {
   lexer_consume_spaces(l);
   int c = lexer_peek(l);
 
-  if (isdigit(c)) {
+  if (isdigit(c) || c == '+' || c == '-') {
     return lexer_lex_integer(l);
   }
   if (isalnum(c) || c == '_') {
@@ -199,6 +203,13 @@ lexem_t lexer_next_token(lexer_t *l) {
     }
   }
   return (lexem_t){.kind = LX_ERR};
+}
+
+void lexer_throw_till_break(lexer_t *l)
+{
+  size_t current_line = lexer_peek_token(l).line_num;
+  while(lexer_peek_token(l).line_num == current_line)
+    lexer_consume_token(l);
 }
 
 size_t lexer_get_line(lexer_t* l)
