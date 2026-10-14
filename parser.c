@@ -12,7 +12,8 @@ void parser_set_arena(arena_t *a) { arena = a; }
 bool parser_expect(lexer_t *l, lexem_kind_t type) {
   lexem_t lex = lexer_peek_token(l);
   if (lex.kind != type) {
-    PARSE_LOG("Expected (%d) but got (%d)", type, lex.kind);
+    // PARSE_LOG("Expected (%d) but got (%d)", type, lex.kind);
+    return false;
   }
   return lex.kind == type;
 }
@@ -24,7 +25,7 @@ parse_result parse_integer(lexer_t *l) {
     lexem_t lex = lexer_consume_token(l);
     res.result = ast_new_int(arena, lex.ival);
     ast_set_pos(res.result, l->line_num, l->char_num);
-    PARSE_LOG("parsed int (%d)", lex.ival);
+    // PARSE_LOG("parsed int (%d)", lex.ival);
   } else {
     res.is_ok = false;
     res.err = "Could not parse int";
@@ -34,13 +35,9 @@ parse_result parse_integer(lexer_t *l) {
   return res;
 }
 
-parse_result parser_new_error(lexer_t *l, const char *err)
-{
+parse_result parser_new_error(lexer_t *l, const char *err) {
   return (parse_result){
-    .line_num = lexer_get_line(l),
-    .char_num = lexer_get_char(l),
-    .err = err
-  };
+      .line_num = lexer_get_line(l), .char_num = lexer_get_char(l), .err = err};
 }
 
 parse_result parse_variable(lexer_t *l) {
@@ -50,7 +47,7 @@ parse_result parse_variable(lexer_t *l) {
     lexem_t lex = lexer_consume_token(l);
     res.result = ast_new_var(arena, lex.identifier);
     ast_set_pos(res.result, l->line_num, l->char_num);
-    PARSE_LOG("ident (%s)", lex.identifier);
+    // PARSE_LOG("ident (%s)", lex.identifier);
   } else {
     res = parser_new_error(l, "Not an identifier");
   }
@@ -71,14 +68,14 @@ parse_result parse_bi_op_factor(lexer_t *l) {
     if (!res.is_ok)
       return res;
     if (!parser_expect(l, LX_CPAR)) {
-      PARSE_LOG("Parenthesis prblm; got : %d", lexer_peek_token(l).kind);
+      // PARSE_LOG("Parenthesis prblm; got : %d", lexer_peek_token(l).kind);
       res = parser_new_error(l, "Need to close the parenthesis");
     } else {
       lexer_consume_token(l);
     }
   } else {
-    PARSE_LOG("factor err : got type (%d)", lex.kind);
-    //lexer_print_lexem(lex);
+    // PARSE_LOG("factor err : got type (%d)", lex.kind);
+    // lexer_print_lexem(lex);
     res = parser_new_error(l, "Could not parse factor");
   }
   return res;
@@ -132,10 +129,8 @@ parse_result parse_expr(lexer_t *l) {
   return left;
 }
 
-parse_result parse_type(lexer_t* l)
-{
-  if(!parser_expect(l, LX_TYPE_INT))
-  {
+parse_result parse_type(lexer_t *l) {
+  if (!parser_expect(l, LX_TYPE_INT)) {
     return parser_new_error(l, "Need a typename for a type");
   }
   parse_result res;
@@ -144,22 +139,21 @@ parse_result parse_type(lexer_t* l)
   bool is_bounded = false;
   int max = 0;
   int min = 0;
-  if(parser_expect(l, LX_LT))
-  {
+  if (parser_expect(l, LX_LT)) {
     lexer_consume_token(l);
     is_bounded = true;
-    if(!parser_expect(l, LX_INT))
-    {
+    if (!parser_expect(l, LX_INT)) {
       return parser_new_error(l, "Need to add bounds for a bounded type");
     }
-    lexem_t min_token = lexer_consume_token(l); 
-    
-    if(!parser_expect(l, LX_COMMA))
-      return parser_new_error(l, "For bounded types, bounds are separated by commas");
+    lexem_t min_token = lexer_consume_token(l);
+
+    if (!parser_expect(l, LX_COMMA))
+      return parser_new_error(
+          l, "For bounded types, bounds are separated by commas");
 
     lexer_consume_token(l);
 
-    if(!parser_expect(l, LX_INT))
+    if (!parser_expect(l, LX_INT))
       return parser_new_error(l, "Need to add bounds for a bounded type");
 
     lexem_t max_token = lexer_consume_token(l);
@@ -167,14 +161,13 @@ parse_result parse_type(lexer_t* l)
     is_bounded = true;
     min = min_token.ival;
     max = max_token.ival;
-    if(!parser_expect(l, LX_GT))
+    if (!parser_expect(l, LX_GT))
       return parser_new_error(l, "End the boundary by the '>' character");
 
     lexer_consume_token(l);
-
   }
   res.is_ok = true;
-  res.result = ast_new_type(arena,nt,min,max,is_bounded);
+  res.result = ast_new_type(arena, nt, min, max, is_bounded);
   return res;
 }
 
@@ -184,9 +177,9 @@ parse_result parse_declaration(lexer_t *l) {
   if (!t.is_ok)
     return t;
 
-  if (!parser_expect(l, LX_IDENT)) 
+  if (!parser_expect(l, LX_IDENT))
     return parser_new_error(l, "Need a name to declare a variable");
-  
+
   lexem_t name = lexer_consume_token(l);
 
   anode_t *expr_n = NULL;
@@ -198,8 +191,14 @@ parse_result parse_declaration(lexer_t *l) {
 
     expr_n = expr.result;
   }
+
+  if (!parser_expect(l, LX_SEMICOLUMN))
+    return parser_new_error(l, "[decl] Missing semicolumn");
+  else
+    lexer_consume_token(l);
+
   res.is_ok = true;
-  res.result = ast_new_declaration(arena, name.identifier,t.result, expr_n);
+  res.result = ast_new_declaration(arena, name.identifier, t.result, expr_n);
   res.char_num = lexer_get_char(l);
   res.line_num = lexer_get_line(l);
   return res;
@@ -210,13 +209,18 @@ parse_result parse_assignment(lexer_t *l) {
   if (!left.is_ok)
     return left;
 
-  if (!parser_expect(l, LX_EQ)) 
+  if (!parser_expect(l, LX_EQ))
     return parser_new_error(l, "Need '=' for assignment ");
-  
+
   lexer_consume_token(l);
   parse_result right = parse_expr(l);
   if (!right.is_ok)
     return right;
+
+  if (!parser_expect(l, LX_SEMICOLUMN))
+    return parser_new_error(l, "[assi] Missing semicolumn");
+  else
+    lexer_consume_token(l);
 
   parse_result res;
   res.is_ok = true;
@@ -229,8 +233,8 @@ parse_result parse_assignment(lexer_t *l) {
 parse_result parse_if(lexer_t *l) {
 
   parse_result res;
-  if (!parser_expect(l, LX_IF)) 
-    return parser_new_error(l, "No if for an if statement ?!"); 
+  if (!parser_expect(l, LX_IF))
+    return parser_new_error(l, "No if for an if statement ?!");
 
   lexer_consume_token(l);
   parse_result cond = parse_expr(l);
@@ -251,7 +255,8 @@ parse_result parse_if(lexer_t *l) {
     otherwise = stmt.result;
   }
 
-  res.result   = ast_new_if_branch(arena, cond.result, statement.result, otherwise);
+  res.result =
+      ast_new_if_branch(arena, cond.result, statement.result, otherwise);
   res.line_num = lexer_get_line(l);
   res.char_num = lexer_get_char(l);
 
@@ -282,7 +287,7 @@ parse_result parse_while(lexer_t *l) {
 
 parse_result parse_defer(lexer_t *l) {
   if (!parser_expect(l, LX_DEFER))
-    return parser_new_error(l,  "No defer");
+    return parser_new_error(l, "No defer");
 
   lexem_t defer = lexer_consume_token(l);
   parse_result stmt = parse_statement(l);
@@ -296,20 +301,22 @@ parse_result parse_defer(lexer_t *l) {
   return res;
 }
 
-parse_result parse_block(lexer_t* l)
-{
-  if(!parser_expect(l, LX_OCRL_BRA))
-    return parser_new_error(l,  "No '{'");
+parse_result parse_block(lexer_t *l) {
+  if (!parser_expect(l, LX_OCRL_BRA))
+    return parser_new_error(l, "No '{'");
 
   lexer_consume_token(l);
   parse_result res;
-  list_t* list = list_new();
+  list_t *list = list_new();
 
-  while(lexer_peek_token(l).kind != LX_CCRL_BRA)
-  {
+  while (lexer_peek_token(l).kind != LX_CCRL_BRA) {
     parse_result stmt = parse_statement(l);
-    if(!stmt.is_ok)
-      return stmt;
+    if (!stmt.is_ok) {
+      printf("[PARSER ERR <%zu:%zu>] %s\n", stmt.line_num, stmt.char_num,
+             stmt.err);
+      lexer_throw_till_break(l);
+      continue;
+    }
     list_append(list, stmt.result);
   }
 
@@ -333,7 +340,7 @@ parse_result parse_statement(lexer_t *l) {
     res = parse_while(l);
   } else if (tok.kind == LX_DEFER) {
     res = parse_defer(l);
-  } else if (tok.kind == LX_OCRL_BRA){
+  } else if (tok.kind == LX_OCRL_BRA) {
     res = parse_block(l);
   } else {
     res = parse_assignment(l);

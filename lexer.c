@@ -7,7 +7,7 @@
 char_lexem_pair_t single_char_tokens[] = {
     {'=', LX_EQ},
     {',', LX_COMMA},
-    {';', LX_COMMA},
+    {';', LX_SEMICOLUMN},
     {'(', LX_OPAR},     
     {')', LX_CPAR},     
     {'[', LX_OSQR_BRA},
@@ -207,9 +207,9 @@ lexem_t lexer_next_token(lexer_t *l) {
 
 void lexer_throw_till_break(lexer_t *l)
 {
-  size_t current_line = lexer_peek_token(l).line_num;
-  while(lexer_peek_token(l).line_num == current_line)
+  while(lexer_peek_token(l).kind != LX_SEMICOLUMN && lexer_peek_token(l).kind != LX_CCRL_BRA)
     lexer_consume_token(l);
+  lexer_consume_token(l);
 }
 
 size_t lexer_get_line(lexer_t* l)
