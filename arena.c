@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "arena.h"
+#include "errors.h"
 
 struct arena_allocator {
   size_t capacity;
   size_t cursor;
+  error_t* errors;
+  size_t err_len;
+  size_t err_cap;
   char*  buffer;
 };
 
@@ -14,6 +18,11 @@ arena_t* arena_new(size_t size, arena_flag_t flags)
   a->capacity = size;
   a->cursor = 0;
   a->buffer = (char*)malloc(sizeof(char) * size);
+
+  a->err_len = 0;
+  a->err_cap = 2;
+
+  a->errors = (error_t*)malloc(sizeof(error_t) * 2);
   return a;
 }
 
@@ -34,8 +43,27 @@ size_t arena_get_taken(arena_t* arena)
   return arena->cursor;
 }
 
+void arena_new_err(arena_t* arena, error_t err)
+{
+  if(arena->err_len + 1 >= arena->err_cap)
+  {
+    //realocate
+    arena->err_cap *= 2;
+    arena->errors = realloc(arena->errors, arena->err_cap);
+  }
+  arena->errors[arena->err_len++] = err;
+}
+
+error_t* arena_get_errors(arena_t* arena, size_t* len)
+{
+  if(len != NULL)
+    *len = arena->err_len;
+  return arena->errors;
+}
+
 void arena_free(arena_t* a)
 {
+  free(a->errors);
   free(a->buffer);
   free(a);
 }

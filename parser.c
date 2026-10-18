@@ -1,6 +1,9 @@
 #include "parser.h"
+#include "arena.h"
 #include "ast.h"
+#include "errors.h"
 #include "lexer.h"
+#include <stdarg.h>
 
 arena_t *arena = NULL;
 
@@ -27,15 +30,26 @@ parse_result parse_integer(lexer_t *l) {
     ast_set_pos(res.result, l->line_num, l->char_num);
     // PARSE_LOG("parsed int (%d)", lex.ival);
   } else {
-    res.is_ok = false;
-    res.err = "Could not parse int";
-    res.line_num = lexer_get_line(l);
-    res.char_num = lexer_get_line(l);
+    res = parser_new_error(
+        l, "Could not parse int, got (%d) instead of (%d)", 
+        lexer_peek_token(l).kind, LX_INT
+    );
   }
   return res;
 }
 
-parse_result parser_new_error(lexer_t *l, const char *err) {
+parse_result parser_new_error(lexer_t *l, const char *err, ...) {
+  va_list args;
+  va_start(args, err);
+  error_t error = vnew_error(
+    lexer_get_line(l),
+    lexer_get_char(l),
+    ERR_PARSER,
+    ERR_ERR,
+    err,
+    args
+  );
+  arena_new_err(arena, error);
   return (parse_result){
       .line_num = lexer_get_line(l), .char_num = lexer_get_char(l), .err = err};
 }
@@ -49,7 +63,7 @@ parse_result parse_variable(lexer_t *l) {
     ast_set_pos(res.result, l->line_num, l->char_num);
     // PARSE_LOG("ident (%s)", lex.identifier);
   } else {
-    res = parser_new_error(l, "Not an identifier");
+    res = parser_new_error(l, "Not an identifier (%d)", lexer_peek_token(l).kind);
   }
   return res;
 }
@@ -73,6 +87,13 @@ parse_result parse_bi_op_factor(lexer_t *l) {
     } else {
       lexer_consume_token(l);
     }
+  }else if (lex.kind == LX_OP){
+    lexem_t tok = lexer_consume_token(l);
+    parse_result sub = parse_bi_op_factor(l);
+    if(!sub.is_ok)
+      return sub;
+    res.is_ok = true;
+    res.result = ast_new_unary(arena, tok.op, sub.result);
   } else {
     // PARSE_LOG("factor err : got type (%d)", lex.kind);
     // lexer_print_lexem(lex);
@@ -101,7 +122,7 @@ parse_result parse_bi_op_term(lexer_t *l) {
     left.result = ast_new_binary(arena, op_tok.op, left.result, right.result);
   }
   left.line_num = lexer_get_line(l);
-  left.char_num = lexer_get_line(l);
+  left.char_num = lexer_get_char(l);
 
   return left;
 }
@@ -137,30 +158,25 @@ parse_result parse_type(lexer_t *l) {
   lexer_consume_token(l);
   ast_native_type_t nt = TYPE_INT;
   bool is_bounded = false;
-  int max = 0;
-  int min = 0;
+  anode_t *max = NULL;
+  anode_t *min = NULL;
   if (parser_expect(l, LX_LT)) {
     lexer_consume_token(l);
     is_bounded = true;
-    if (!parser_expect(l, LX_INT)) {
-      return parser_new_error(l, "Need to add bounds for a bounded type");
-    }
-    lexem_t min_token = lexer_consume_token(l);
+    parse_result bmin = parse_expr(l);
+    if(!bmin.is_ok)
+      return bmin;
 
     if (!parser_expect(l, LX_COMMA))
       return parser_new_error(
           l, "For bounded types, bounds are separated by commas");
-
     lexer_consume_token(l);
 
-    if (!parser_expect(l, LX_INT))
-      return parser_new_error(l, "Need to add bounds for a bounded type");
-
-    lexem_t max_token = lexer_consume_token(l);
+    parse_result bmax = parse_expr(l);
 
     is_bounded = true;
-    min = min_token.ival;
-    max = max_token.ival;
+    min = bmin.result;
+    max = bmax.result;
     if (!parser_expect(l, LX_GT))
       return parser_new_error(l, "End the boundary by the '>' character");
 
@@ -301,6 +317,27 @@ parse_result parse_defer(lexer_t *l) {
   return res;
 }
 
+parse_result parse_return(lexer_t *l) {
+  if (!parser_expect(l, LX_RETURN))
+    return parser_new_error(l, "No return");
+  lexer_consume_token(l);
+  parse_result expr = parse_expr(l);
+  if (!expr.is_ok)
+    return expr;
+  
+  if (!parser_expect(l, LX_SEMICOLUMN))
+    return parser_new_error(l, "[assi] Missing semicolumn");
+  else
+    lexer_consume_token(l);
+
+  parse_result res;
+  res.is_ok = true;
+  res.char_num = expr.char_num;
+  res.line_num = expr.line_num;
+  res.result = ast_new_return(arena, expr.result);
+  return res;
+}
+
 parse_result parse_block(lexer_t *l) {
   if (!parser_expect(l, LX_OCRL_BRA))
     return parser_new_error(l, "No '{'");
@@ -342,6 +379,8 @@ parse_result parse_statement(lexer_t *l) {
     res = parse_defer(l);
   } else if (tok.kind == LX_OCRL_BRA) {
     res = parse_block(l);
+  } else if(tok.kind == LX_RETURN) {
+    res = parse_return(l);
   } else {
     res = parse_assignment(l);
   }

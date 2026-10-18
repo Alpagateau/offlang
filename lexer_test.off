@@ -8,13 +8,12 @@
     else {
       int<-4, 8> something = hello;
       int<0, 4> something_else = something + 1;
-
       if something {
         int noooo;
       }
     }
   }
 
-  int some_other_var = 1 + 3 * 3 + 2;
+  int some_other_var = 1 + 3 * 3 + -2;
 
 }

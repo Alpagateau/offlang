@@ -21,6 +21,7 @@ typedef enum {
   INT_LIT, 
   VARIABLE, 
   BI_OP,
+  UN_OP,
   
   //Type system
   TYPE,
@@ -31,6 +32,7 @@ typedef enum {
   IF_BRANCH,
   WHILE_LOOP,
   DEFER,
+  RETURN,
   BLOCK,
 } ast_type_t;
 
@@ -42,12 +44,14 @@ anode_t *ast_new(arena_t *arena, ast_type_t type);
 anode_t *ast_new_int(arena_t *arena, int value);
 anode_t *ast_new_var(arena_t *arena, const char *value);
 anode_t *ast_new_binary(arena_t *arena, ast_op_t op, anode_t *lc, anode_t *rc);
-anode_t *ast_new_type(arena_t *arena, ast_native_type_t t, int min, int max, bool bounded);
+anode_t *ast_new_unary(arena_t *arena, ast_op_t op, anode_t *child);
+anode_t *ast_new_type(arena_t *arena, ast_native_type_t t, anode_t *min, anode_t *max, bool bounded);
 anode_t *ast_new_declaration(arena_t *arena, const char* name, anode_t* t,anode_t* expr);
 anode_t *ast_new_assigment(arena_t *arena, anode_t* lv, anode_t* expr);
 anode_t *ast_new_if_branch(arena_t *arena, anode_t* cond, anode_t *then, anode_t *otherwise);
 anode_t *ast_new_while_loop(arena_t *arena, anode_t* cond, anode_t *then);
 anode_t *ast_new_defer(arena_t *arena, anode_t *stmt);
+anode_t *ast_new_return(arena_t *arena, anode_t *ret);
 anode_t *ast_new_block(arena_t *arena, list_t* lst);
 
 ast_type_t ast_get_type(anode_t* ast);

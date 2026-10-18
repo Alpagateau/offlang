@@ -20,6 +20,7 @@ typedef enum {
   LX_ELSE,
   LX_WHILE,
   LX_DEFER,
+  LX_RETURN,
 
   // Punctuation
   LX_COMMA,

@@ -65,6 +65,10 @@ void list_insert_at(list_t *l, anode_t *node, size_t idx) {
 void list_remove_at(list_t *l, size_t idx) {
   if (idx == 0) {
     l->first = l->first->nxt;
+    if(l->first == NULL)
+    {
+      l->last = NULL;
+    }
     l->len--;
   }
   if (idx < l->len && idx > 0) {

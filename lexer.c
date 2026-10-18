@@ -19,11 +19,13 @@ char_lexem_pair_t single_char_tokens[] = {
     {0, LX_ERR}};
 
 keyword_lexem_pair_t keyword_tokens[] = {
-    {"int", LX_TYPE_INT}, 
-    {"if", LX_IF}, 
-    {"else", LX_ELSE}, 
-    {"while", LX_WHILE}, 
-    {"defer", LX_DEFER}, 
+    {"int"   , LX_TYPE_INT}, 
+    {"if"    , LX_IF}, 
+    {"else"  , LX_ELSE}, 
+    {"while" , LX_WHILE}, 
+    {"defer" , LX_DEFER}, 
+    {"ret"   , LX_RETURN},
+    {"return", LX_RETURN},
     {NULL, LX_ERR}
 };
 
@@ -72,11 +74,6 @@ lexem_t lexer_lex_integer(lexer_t *l) {
 
   size_t line_num = l->line_num;
   size_t char_num = l->char_num;
-  if(c == '-' || c == '+')
-  {
-    buffer[idx++] = lexer_consume(l);
-  }
-  c = lexer_peek(l);
   while (isdigit(c)) {
     lexer_consume(l);
     if (idx >= 11) {
@@ -185,9 +182,10 @@ lexem_t lexer_next_token(lexer_t *l) {
   lexer_consume_spaces(l);
   int c = lexer_peek(l);
 
-  if (isdigit(c) || c == '+' || c == '-') {
+  if (isdigit(c)) { 
     return lexer_lex_integer(l);
   }
+
   if (isalnum(c) || c == '_') {
     return lexer_lex_kw_identifier(l);
   }
@@ -207,7 +205,10 @@ lexem_t lexer_next_token(lexer_t *l) {
 
 void lexer_throw_till_break(lexer_t *l)
 {
-  while(lexer_peek_token(l).kind != LX_SEMICOLUMN && lexer_peek_token(l).kind != LX_CCRL_BRA)
+  while(
+      lexer_peek_token(l).kind != LX_SEMICOLUMN 
+      && lexer_peek_token(l).kind != LX_CCRL_BRA 
+      && lexer_peek_token(l).kind != LX_ERR)
     lexer_consume_token(l);
   lexer_consume_token(l);
 }
