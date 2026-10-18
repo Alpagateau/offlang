@@ -146,7 +146,7 @@ anode_t *ast_new_defer(arena_t *arena, anode_t *stmt) {
 }
 
 anode_t *ast_new_return(arena_t *arena, anode_t *ret) {
-  anode_t *n = ast_new(arena, DEFER);
+  anode_t *n = ast_new(arena, RETURN);
   n->ret.expr = ret;
   return n;
 }

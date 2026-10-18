@@ -11,9 +11,10 @@
       if something {
         int noooo;
       }
+      if something_else
+        defer hello = 2;
     }
   }
-
   int some_other_var = 1 + 3 * 3 + -2;
-
+  return 3;
 }
