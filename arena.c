@@ -49,7 +49,7 @@ void arena_new_err(arena_t* arena, error_t err)
   {
     //realocate
     arena->err_cap *= 2;
-    arena->errors = realloc(arena->errors, arena->err_cap);
+    arena->errors = realloc(arena->errors, arena->err_cap * sizeof(error_t));
   }
   arena->errors[arena->err_len++] = err;
 }

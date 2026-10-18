@@ -14,32 +14,37 @@ typedef struct {
   };
 } parse_result;
 
-void parser_set_arena(arena_t *a);
-bool parser_expect(lexer_t *l, lexem_kind_t type);
+typedef struct {
+  lexer_t* l;
+  arena_t* a;
+}parser_ctx;
+
+//void parser_set_arena(arena_t *a);
+bool parser_expect(parser_ctx ctx, lexem_kind_t type);
 
 //Error handling
-parse_result parser_new_error(lexer_t *l, const char *err, ...);
+parse_result parser_new_error(parser_ctx ctx, const char *err, ...);
 
 // Simple expressions
-parse_result parse_integer(lexer_t *l);
-parse_result parse_variable(lexer_t *l);
-parse_result parse_bi_op_factor(lexer_t *l);
-parse_result parse_bi_op_term(lexer_t *l);
+parse_result parse_integer(parser_ctx ctx);
+parse_result parse_variable(parser_ctx ctx);
+parse_result parse_bi_op_factor(parser_ctx ctx);
+parse_result parse_bi_op_term(parser_ctx ctx);
 
-parse_result parse_expr(lexer_t *l);
+parse_result parse_expr(parser_ctx ctx);
 
 // Type system
-parse_result parse_type(lexer_t* l);
+parse_result parse_type(parser_ctx ctx);
 
 // Statements
-parse_result parse_declaration(lexer_t *l);
-parse_result parse_assignment(lexer_t *l);
-parse_result parse_if(lexer_t *l);
-parse_result parse_while(lexer_t* l);
-parse_result parse_defer(lexer_t* l);
-parse_result parse_return(lexer_t* l);
-parse_result parse_block(lexer_t* l);
+parse_result parse_declaration(parser_ctx ctx);
+parse_result parse_assignment(parser_ctx ctx);
+parse_result parse_if(parser_ctx ctx);
+parse_result parse_while(parser_ctx ctx);
+parse_result parse_defer(parser_ctx ctx);
+parse_result parse_return(parser_ctx ctx);
+parse_result parse_block(parser_ctx ctx);
 
-parse_result parse_statement(lexer_t *l);
+parse_result parse_statement(parser_ctx ctx);
 
 #endif

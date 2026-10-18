@@ -14,6 +14,7 @@ typedef struct {
   list_node_t* first; 
   list_node_t* last;
   size_t len;
+  arena_t* arena;
 } list_t;
 
 typedef enum { 
@@ -71,7 +72,7 @@ void print_ast(anode_t* ast);
 // LISTS
 
 
-list_t* list_new();
+list_t* list_new(arena_t* arena);
 
 void list_append(list_t* l, anode_t* node);
 void list_insert_at(list_t* l, anode_t* node, size_t idx);

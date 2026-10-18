@@ -5,15 +5,13 @@
 #include "lexer.h"
 #include <stdarg.h>
 
-arena_t *arena = NULL;
 
 #define PARSE_LOG(msg, ...)                                                    \
   printf("[PARSE DEBUG (%d)]" msg "\n", __LINE__, ##__VA_ARGS__)
 
-void parser_set_arena(arena_t *a) { arena = a; }
 
-bool parser_expect(lexer_t *l, lexem_kind_t type) {
-  lexem_t lex = lexer_peek_token(l);
+bool parser_expect(parser_ctx ctx, lexem_kind_t type) {
+  lexem_t lex = lexer_peek_token(ctx.l);
   if (lex.kind != type) {
     // PARSE_LOG("Expected (%d) but got (%d)", type, lex.kind);
     return false;
@@ -21,368 +19,367 @@ bool parser_expect(lexer_t *l, lexem_kind_t type) {
   return lex.kind == type;
 }
 
-parse_result parse_integer(lexer_t *l) {
+parse_result parse_integer(parser_ctx ctx) {
   parse_result res;
-  if (parser_expect(l, LX_INT)) {
+  if (parser_expect(ctx, LX_INT)) {
     res.is_ok = true;
-    lexem_t lex = lexer_consume_token(l);
-    res.result = ast_new_int(arena, lex.ival);
-    ast_set_pos(res.result, l->line_num, l->char_num);
+    lexem_t lex = lexer_consume_token(ctx.l);
+    res.result = ast_new_int(ctx.a, lex.ival);
+    ast_set_pos(res.result, lexer_get_line(ctx.l), lexer_get_char(ctx.l));
     // PARSE_LOG("parsed int (%d)", lex.ival);
   } else {
     res = parser_new_error(
-        l, "Could not parse int, got (%d) instead of (%d)", 
-        lexer_peek_token(l).kind, LX_INT
+        ctx, "Could not parse int, got (%d) instead of (%d)", 
+        lexer_peek_token(ctx.l).kind, LX_INT
     );
   }
   return res;
 }
 
-parse_result parser_new_error(lexer_t *l, const char *err, ...) {
+parse_result parser_new_error(parser_ctx ctx, const char *err, ...) {
   va_list args;
   va_start(args, err);
   error_t error = vnew_error(
-    lexer_get_line(l),
-    lexer_get_char(l),
+    lexer_get_line(ctx.l),
+    lexer_get_char(ctx.l),
     ERR_PARSER,
     ERR_ERR,
     err,
     args
   );
-  arena_new_err(arena, error);
+  arena_new_err(ctx.a, error);
   return (parse_result){
-      .line_num = lexer_get_line(l), .char_num = lexer_get_char(l), .err = err};
+      .line_num = lexer_get_line(ctx.l), .char_num = lexer_get_char(ctx.l), .err = err};
 }
 
-parse_result parse_variable(lexer_t *l) {
+parse_result parse_variable(parser_ctx ctx) {
   parse_result res;
-  if (parser_expect(l, LX_IDENT)) {
+  if (parser_expect(ctx, LX_IDENT)) {
     res.is_ok = true;
-    lexem_t lex = lexer_consume_token(l);
-    res.result = ast_new_var(arena, lex.identifier);
-    ast_set_pos(res.result, l->line_num, l->char_num);
+    lexem_t lex = lexer_consume_token(ctx.l);
+    res.result = ast_new_var(ctx.a, lex.identifier);
+    ast_set_pos(res.result, lexer_get_line(ctx.l), lexer_get_char(ctx.l));
     // PARSE_LOG("ident (%s)", lex.identifier);
   } else {
-    res = parser_new_error(l, "Not an identifier (%d)", lexer_peek_token(l).kind);
+    res = parser_new_error(ctx, "Not an identifier (%d)", lexer_peek_token(ctx.l).kind);
   }
   return res;
 }
 
-parse_result parse_bi_op_factor(lexer_t *l) {
+parse_result parse_bi_op_factor(parser_ctx ctx) {
   parse_result res;
-  lexem_t lex = lexer_peek_token(l);
+  lexem_t lex = lexer_peek_token(ctx.l);
 
   if (lex.kind == LX_IDENT) {
-    res = parse_variable(l);
+    res = parse_variable(ctx);
   } else if (lex.kind == LX_INT) {
-    res = parse_integer(l);
+    res = parse_integer(ctx);
   } else if (lex.kind == LX_OPAR) {
-    lexer_consume_token(l);
-    res = parse_expr(l);
+    lexer_consume_token(ctx.l);
+    res = parse_expr(ctx);
     if (!res.is_ok)
       return res;
-    if (!parser_expect(l, LX_CPAR)) {
+    if (!parser_expect(ctx, LX_CPAR)) {
       // PARSE_LOG("Parenthesis prblm; got : %d", lexer_peek_token(l).kind);
-      res = parser_new_error(l, "Need to close the parenthesis");
+      res = parser_new_error(ctx, "Need to close the parenthesis");
     } else {
-      lexer_consume_token(l);
+      lexer_consume_token(ctx.l);
     }
   }else if (lex.kind == LX_OP){
-    lexem_t tok = lexer_consume_token(l);
-    parse_result sub = parse_bi_op_factor(l);
+    lexem_t tok = lexer_consume_token(ctx.l);
+    parse_result sub = parse_bi_op_factor(ctx);
     if(!sub.is_ok)
       return sub;
     res.is_ok = true;
-    res.result = ast_new_unary(arena, tok.op, sub.result);
+    res.result = ast_new_unary(ctx.a, tok.op, sub.result);
   } else {
     // PARSE_LOG("factor err : got type (%d)", lex.kind);
     // lexer_print_lexem(lex);
-    res = parser_new_error(l, "Could not parse factor");
+    res = parser_new_error(ctx, "Could not parse factor");
   }
   return res;
 }
 
-parse_result parse_bi_op_term(lexer_t *l) {
-  parse_result left = parse_bi_op_factor(l);
+parse_result parse_bi_op_term(parser_ctx ctx) {
+  parse_result left = parse_bi_op_factor(ctx);
   if (!left.is_ok)
     return left;
 
   while (true) {
-    lexem_t op_tok = lexer_peek_token(l);
+    lexem_t op_tok = lexer_peek_token(ctx.l);
 
     if (op_tok.kind != LX_OP || (op_tok.op != OP_DIV && op_tok.op != OP_MUL))
       break;
 
-    lexer_consume_token(l);
+    lexer_consume_token(ctx.l);
 
-    parse_result right = parse_bi_op_factor(l);
+    parse_result right = parse_bi_op_factor(ctx);
     if (!right.is_ok)
       return right;
 
-    left.result = ast_new_binary(arena, op_tok.op, left.result, right.result);
+    left.result = ast_new_binary(ctx.a, op_tok.op, left.result, right.result);
   }
-  left.line_num = lexer_get_line(l);
-  left.char_num = lexer_get_char(l);
+  left.line_num = lexer_get_line(ctx.l);
+  left.char_num = lexer_get_char(ctx.l);
 
   return left;
 }
 
-parse_result parse_expr(lexer_t *l) {
-  parse_result left = parse_bi_op_term(l);
+parse_result parse_expr(parser_ctx ctx) {
+  parse_result left = parse_bi_op_term(ctx);
   if (!left.is_ok)
     return left;
 
   while (true) {
-    lexem_t op_tok = lexer_peek_token(l);
+    lexem_t op_tok = lexer_peek_token(ctx.l);
 
     if (op_tok.kind != LX_OP || (op_tok.op != OP_ADD && op_tok.op != OP_SUB))
       break;
 
-    lexer_consume_token(l);
+    lexer_consume_token(ctx.l);
 
-    parse_result right = parse_bi_op_term(l);
+    parse_result right = parse_bi_op_term(ctx);
     if (!right.is_ok)
       return right;
 
-    left.result = ast_new_binary(arena, op_tok.op, left.result, right.result);
+    left.result = ast_new_binary(ctx.a, op_tok.op, left.result, right.result);
   }
 
   return left;
 }
 
-parse_result parse_type(lexer_t *l) {
-  if (!parser_expect(l, LX_TYPE_INT)) {
-    return parser_new_error(l, "Need a typename for a type");
+parse_result parse_type(parser_ctx ctx) {
+  if (!parser_expect(ctx, LX_TYPE_INT)) {
+    return parser_new_error(ctx, "Need a typename for a type");
   }
   parse_result res;
-  lexer_consume_token(l);
+  lexer_consume_token(ctx.l);
   ast_native_type_t nt = TYPE_INT;
   bool is_bounded = false;
   anode_t *max = NULL;
   anode_t *min = NULL;
-  if (parser_expect(l, LX_LT)) {
-    lexer_consume_token(l);
+  if (parser_expect(ctx, LX_LT)) {
+    lexer_consume_token(ctx.l);
     is_bounded = true;
-    parse_result bmin = parse_expr(l);
+    parse_result bmin = parse_expr(ctx);
     if(!bmin.is_ok)
       return bmin;
 
-    if (!parser_expect(l, LX_COMMA))
+    if (!parser_expect(ctx, LX_COMMA))
       return parser_new_error(
-          l, "For bounded types, bounds are separated by commas");
-    lexer_consume_token(l);
+          ctx, "For bounded types, bounds are separated by commas");
+    lexer_consume_token(ctx.l);
 
-    parse_result bmax = parse_expr(l);
+    parse_result bmax = parse_expr(ctx);
 
     is_bounded = true;
     min = bmin.result;
     max = bmax.result;
-    if (!parser_expect(l, LX_GT))
-      return parser_new_error(l, "End the boundary by the '>' character");
+    if (!parser_expect(ctx, LX_GT))
+      return parser_new_error(ctx, "End the boundary by the '>' character");
 
-    lexer_consume_token(l);
+    lexer_consume_token(ctx.l);
   }
   res.is_ok = true;
-  res.result = ast_new_type(arena, nt, min, max, is_bounded);
+  res.result = ast_new_type(ctx.a, nt, min, max, is_bounded);
   return res;
 }
 
-parse_result parse_declaration(lexer_t *l) {
+parse_result parse_declaration(parser_ctx ctx) {
   parse_result res;
-  parse_result t = parse_type(l);
+  parse_result t = parse_type(ctx);
   if (!t.is_ok)
     return t;
 
-  if (!parser_expect(l, LX_IDENT))
-    return parser_new_error(l, "Need a name to declare a variable");
+  if (!parser_expect(ctx, LX_IDENT))
+    return parser_new_error(ctx, "Need a name to declare a variable");
 
-  lexem_t name = lexer_consume_token(l);
+  lexem_t name = lexer_consume_token(ctx.l);
 
   anode_t *expr_n = NULL;
-  if (parser_expect(l, LX_EQ)) {
-    lexer_consume_token(l);
-    parse_result expr = parse_expr(l);
+  if (parser_expect(ctx, LX_EQ)) {
+    lexer_consume_token(ctx.l);
+    parse_result expr = parse_expr(ctx);
     if (!expr.is_ok)
       return expr;
 
     expr_n = expr.result;
   }
 
-  if (!parser_expect(l, LX_SEMICOLUMN))
-    return parser_new_error(l, "[decl] Missing semicolumn");
+  if (!parser_expect(ctx, LX_SEMICOLUMN))
+    return parser_new_error(ctx, "[decl] Missing semicolumn");
   else
-    lexer_consume_token(l);
+    lexer_consume_token(ctx.l);
 
   res.is_ok = true;
-  res.result = ast_new_declaration(arena, name.identifier, t.result, expr_n);
-  res.char_num = lexer_get_char(l);
-  res.line_num = lexer_get_line(l);
+  res.result = ast_new_declaration(ctx.a, name.identifier, t.result, expr_n);
+  res.char_num = lexer_get_char(ctx.l);
+  res.line_num = lexer_get_line(ctx.l);
   return res;
 }
 
-parse_result parse_assignment(lexer_t *l) {
-  parse_result left = parse_expr(l);
+parse_result parse_assignment(parser_ctx ctx) {
+  parse_result left = parse_expr(ctx);
   if (!left.is_ok)
     return left;
 
-  if (!parser_expect(l, LX_EQ))
-    return parser_new_error(l, "Need '=' for assignment ");
+  if (!parser_expect(ctx, LX_EQ))
+    return parser_new_error(ctx, "Need '=' for assignment ");
 
-  lexer_consume_token(l);
-  parse_result right = parse_expr(l);
+  lexer_consume_token(ctx.l);
+  parse_result right = parse_expr(ctx);
   if (!right.is_ok)
     return right;
 
-  if (!parser_expect(l, LX_SEMICOLUMN))
-    return parser_new_error(l, "[assi] Missing semicolumn");
+  if (!parser_expect(ctx, LX_SEMICOLUMN))
+    return parser_new_error(ctx, "[assi] Missing semicolumn");
   else
-    lexer_consume_token(l);
+    lexer_consume_token(ctx.l);
 
   parse_result res;
   res.is_ok = true;
-  res.char_num = lexer_get_char(l);
-  res.line_num = lexer_get_line(l);
-  res.result = ast_new_assigment(arena, left.result, right.result);
+  res.char_num = lexer_get_char(ctx.l);
+  res.line_num = lexer_get_line(ctx.l);
+  res.result = ast_new_assigment(ctx.a, left.result, right.result);
   return res;
 }
 
-parse_result parse_if(lexer_t *l) {
-
+parse_result parse_if(parser_ctx ctx) {
   parse_result res;
-  if (!parser_expect(l, LX_IF))
-    return parser_new_error(l, "No if for an if statement ?!");
+  if (!parser_expect(ctx, LX_IF))
+    return parser_new_error(ctx, "No if for an if statement ?!");
 
-  lexer_consume_token(l);
-  parse_result cond = parse_expr(l);
+  lexer_consume_token(ctx.l);
+  parse_result cond = parse_expr(ctx);
   if (!cond.is_ok)
     return cond;
-  parse_result statement = parse_statement(l);
+  parse_result statement = parse_statement(ctx);
   if (!statement.is_ok)
     return statement;
 
   res.is_ok = true;
 
   anode_t *otherwise = NULL;
-  if (parser_expect(l, LX_ELSE)) {
-    lexer_consume_token(l);
-    parse_result stmt = parse_statement(l);
+  if (parser_expect(ctx, LX_ELSE)) {
+    lexer_consume_token(ctx.l);
+    parse_result stmt = parse_statement(ctx);
     if (!stmt.is_ok)
       return stmt;
     otherwise = stmt.result;
   }
 
   res.result =
-      ast_new_if_branch(arena, cond.result, statement.result, otherwise);
-  res.line_num = lexer_get_line(l);
-  res.char_num = lexer_get_char(l);
+      ast_new_if_branch(ctx.a, cond.result, statement.result, otherwise);
+  res.line_num = lexer_get_line(ctx.l);
+  res.char_num = lexer_get_char(ctx.l);
 
   return res;
 }
 
-parse_result parse_while(lexer_t *l) {
+parse_result parse_while(parser_ctx ctx) {
 
   parse_result res;
-  if (!parser_expect(l, LX_WHILE))
-    return parser_new_error(l, "No while for a WHILE ?!");
+  if (!parser_expect(ctx, LX_WHILE))
+    return parser_new_error(ctx, "No while for a WHILE ?!");
 
-  lexer_consume_token(l);
-  parse_result cond = parse_expr(l);
+  lexer_consume_token(ctx.l);
+  parse_result cond = parse_expr(ctx);
   if (!cond.is_ok)
     return cond;
-  parse_result statement = parse_statement(l);
+  parse_result statement = parse_statement(ctx);
   if (!statement.is_ok)
     return statement;
 
   res.is_ok = true;
-  res.result = ast_new_while_loop(arena, cond.result, statement.result);
-  res.line_num = lexer_get_line(l);
-  res.char_num = lexer_get_char(l);
+  res.result = ast_new_while_loop(ctx.a, cond.result, statement.result);
+  res.line_num = lexer_get_line(ctx.l);
+  res.char_num = lexer_get_char(ctx.l);
 
   return res;
 }
 
-parse_result parse_defer(lexer_t *l) {
-  if (!parser_expect(l, LX_DEFER))
-    return parser_new_error(l, "No defer");
+parse_result parse_defer(parser_ctx ctx) {
+  if (!parser_expect(ctx, LX_DEFER))
+    return parser_new_error(ctx, "No defer");
 
-  lexem_t defer = lexer_consume_token(l);
-  parse_result stmt = parse_statement(l);
+  lexem_t defer = lexer_consume_token(ctx.l);
+  parse_result stmt = parse_statement(ctx);
   if (!stmt.is_ok)
     return stmt;
   parse_result res;
   res.is_ok = true;
   res.char_num = defer.char_num;
   res.line_num = defer.line_num;
-  res.result = ast_new_defer(arena, stmt.result);
+  res.result = ast_new_defer(ctx.a, stmt.result);
   return res;
 }
 
-parse_result parse_return(lexer_t *l) {
-  if (!parser_expect(l, LX_RETURN))
-    return parser_new_error(l, "No return");
-  lexer_consume_token(l);
-  parse_result expr = parse_expr(l);
+parse_result parse_return(parser_ctx ctx) {
+  if (!parser_expect(ctx, LX_RETURN))
+    return parser_new_error(ctx, "No return");
+  lexer_consume_token(ctx.l);
+  parse_result expr = parse_expr(ctx);
   if (!expr.is_ok)
     return expr;
   
-  if (!parser_expect(l, LX_SEMICOLUMN))
-    return parser_new_error(l, "[assi] Missing semicolumn");
+  if (!parser_expect(ctx, LX_SEMICOLUMN))
+    return parser_new_error(ctx, "[assi] Missing semicolumn");
   else
-    lexer_consume_token(l);
+    lexer_consume_token(ctx.l);
 
   parse_result res;
   res.is_ok = true;
   res.char_num = expr.char_num;
   res.line_num = expr.line_num;
-  res.result = ast_new_return(arena, expr.result);
+  res.result = ast_new_return(ctx.a, expr.result);
   return res;
 }
 
-parse_result parse_block(lexer_t *l) {
-  if (!parser_expect(l, LX_OCRL_BRA))
-    return parser_new_error(l, "No '{'");
+parse_result parse_block(parser_ctx ctx) {
+  if (!parser_expect(ctx, LX_OCRL_BRA))
+    return parser_new_error(ctx, "No '{'");
 
-  lexer_consume_token(l);
+  lexer_consume_token(ctx.l);
   parse_result res;
-  list_t *list = list_new();
+  list_t *list = list_new(ctx.a);
 
-  while (lexer_peek_token(l).kind != LX_CCRL_BRA) {
-    parse_result stmt = parse_statement(l);
+  while (lexer_peek_token(ctx.l).kind != LX_CCRL_BRA) {
+    parse_result stmt = parse_statement(ctx);
     if (!stmt.is_ok) {
       printf("[PARSER ERR <%zu:%zu>] %s\n", stmt.line_num, stmt.char_num,
              stmt.err);
-      lexer_throw_till_break(l);
+      lexer_throw_till_break(ctx.l);
       continue;
     }
     list_append(list, stmt.result);
   }
 
-  lexer_consume_token(l);
-  res.result = ast_new_block(arena, list);
+  lexer_consume_token(ctx.l);
+  res.result = ast_new_block(ctx.a, list);
   res.is_ok = true;
-  res.line_num = lexer_get_line(l);
-  res.char_num = lexer_get_char(l);
+  res.line_num = lexer_get_line(ctx.l);
+  res.char_num = lexer_get_char(ctx.l);
   return res;
 }
 
-parse_result parse_statement(lexer_t *l) {
+parse_result parse_statement(parser_ctx ctx) {
   parse_result res;
-  lexem_t tok = lexer_peek_token(l);
+  lexem_t tok = lexer_peek_token(ctx.l);
 
   if (tok.kind == LX_TYPE_INT) {
-    res = parse_declaration(l);
+    res = parse_declaration(ctx);
   } else if (tok.kind == LX_IF) {
-    res = parse_if(l);
+    res = parse_if(ctx);
   } else if (tok.kind == LX_WHILE) {
-    res = parse_while(l);
+    res = parse_while(ctx);
   } else if (tok.kind == LX_DEFER) {
-    res = parse_defer(l);
+    res = parse_defer(ctx);
   } else if (tok.kind == LX_OCRL_BRA) {
-    res = parse_block(l);
+    res = parse_block(ctx);
   } else if(tok.kind == LX_RETURN) {
-    res = parse_return(l);
+    res = parse_return(ctx);
   } else {
-    res = parse_assignment(l);
+    res = parse_assignment(ctx);
   }
   return res;
 }

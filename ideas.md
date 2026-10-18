@@ -39,5 +39,7 @@ A statement could be either :
 - a block statement  ({ list of statements })              (done)
 
 A type could be either:
-- default type (int currently)
-- bound   type (int<number, number>)
+- default type (int currently) (done)
+- bound   type (int<number, number>) (done)
+
+

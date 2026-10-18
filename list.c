@@ -2,32 +2,31 @@
 #include "arena.h"
 #include <stdio.h>
 
-extern arena_t *arena;
-
 struct list_node_t {
   anode_t *elem;
   list_node_t *nxt;
 };
 
-list_node_t *new_list_node(anode_t *a) {
+list_node_t *new_list_node(anode_t *a, arena_t* arena) {
   list_node_t *n = (list_node_t *)arena_alloc(arena, sizeof(*n));
   n->elem = a;
   n->nxt = NULL;
   return n;
 }
 
-list_t *list_new() {
+list_t *list_new(arena_t* arena) {
   list_t *l = (list_t *)arena_alloc(arena, sizeof(*l));
   l->first = NULL;
   l->last = NULL;
   l->len = 0;
+  l->arena = arena;
   return l;
 }
 
 void list_append(list_t *l, anode_t *node) {
   if (l == NULL)
     return;
-  list_node_t *n = new_list_node(node);
+  list_node_t *n = new_list_node(node, l->arena);
   if (l->len == 0) {
     l->first = n;
     l->last = n;
@@ -40,14 +39,14 @@ void list_append(list_t *l, anode_t *node) {
 
 void list_insert_at(list_t *l, anode_t *node, size_t idx) {
   if (idx == 0) {
-    list_node_t *n = new_list_node(node);
+    list_node_t *n = new_list_node(node, l->arena);
     n->nxt = l->first;
     l->first = n;
     l->len++;
   } else if (idx == l->len) {
     list_append(l, node);
   } else if (idx < l->len) {
-    list_node_t *n = new_list_node(node);
+    list_node_t *n = new_list_node(node, l->arena);
     list_node_t *e = l->first;
     for (size_t i = 0; i < idx - 1; i++) {
       e = e->nxt;

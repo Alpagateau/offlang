@@ -18,6 +18,7 @@ error_t vnew_error(
   va_list args2;
   va_copy(args2, args);
   size_t len = vsnprintf(NULL, 0, msg, args2);
+  len += 1;
   va_end(args2);
   if(len < 0)
   {

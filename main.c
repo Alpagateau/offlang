@@ -7,16 +7,15 @@
 int compile_per_file(FILE *file) {
   lexer_t lexer;
   arena_t *a = arena_new(10000, 0);
-  parser_set_arena(a);
+  parser_ctx ctx = {
+    .a = a,
+    .l = &lexer
+  };
   lexer_init(file, &lexer);
 
-  parse_result res = parse_statement(&lexer);
+  parse_result res = parse_statement(ctx);
   if (res.is_ok) {
     print_ast(res.result);
-    //printf("arena : space taken : %zu\n", arena_get_taken(a));
-    //printf("\n <SIMPLIFIED> \n");
-    //anode_t *simple = ast_simplify_expr(a, res.result);
-    //print_ast(simple);
     printf("\n");
   } else {
     printf("[PARSER ERROR](%zu:%zu) %s\n", res.line_num, res.char_num, res.err);
