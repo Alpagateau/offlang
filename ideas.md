@@ -40,6 +40,7 @@ A statement could be either :
 
 A type could be either:
 - default type (int currently) (done)
-- bound   type (int<number, number>) (done)
+- bound type (int<number, number>) (done)
 
+# Symbol table
 

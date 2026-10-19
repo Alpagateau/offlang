@@ -2,18 +2,27 @@
 #include "ast.h"
 #include "lexer.h"
 #include "parser.h"
+#include "symbol_table.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int compile_per_file(FILE *file) {
   lexer_t lexer;
   arena_t *a = arena_new(10000, 0);
+  stl_t stl = {
+    .len = 0,
+    .capacity = 1,
+    .sts = malloc(sizeof(st_t))
+  };
+  symbol_table_new(&stl, -1);
   parser_ctx ctx = {
     .a = a,
-    .l = &lexer
+    .l = &lexer,
+    .stl = &stl,
+    .current_table = 0,
   };
   lexer_init(file, &lexer);
-
-  parse_result res = parse_statement(ctx);
+  parse_result res = parse_statement(&ctx);
   if (res.is_ok) {
     print_ast(res.result);
     printf("\n");

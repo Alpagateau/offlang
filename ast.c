@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "symbol_table.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -9,7 +10,7 @@ struct ast_node {
 
   union {
     int ivar;
-    char identifier[64];
+    sp_t symbol;
 
     struct {
       anode_t *lchild;
@@ -23,14 +24,14 @@ struct ast_node {
     } unary;
 
     struct {
-      anode_t *upper_limit;
-      anode_t *lower_limit;
+      int upper_limit;
+      int lower_limit;
       ast_native_type_t type;
       bool bounded;
     } type_name;
 
     struct {
-      char identifier[64];
+      sp_t symbol;
       anode_t *t;
       anode_t *expr;
     } declaration;
@@ -58,9 +59,17 @@ struct ast_node {
     struct {
       anode_t *expr;
     } ret;
+
     struct {
       list_t *stmts;
     } block;
+
+    struct {
+      char func_name[64];
+      anode_t *type;
+      list_t  *args;
+      anode_t *stmt;
+    } func_def;
   };
 };
 
@@ -76,9 +85,9 @@ anode_t *ast_new_int(arena_t *arena, int value) {
   return n;
 }
 
-anode_t *ast_new_var(arena_t *arena, const char *value) {
+anode_t *ast_new_var(arena_t *arena, sp_t symbol) {
   anode_t *n = ast_new(arena, VARIABLE);
-  strcpy(n->identifier, value);
+  n->symbol = symbol;
   return n;
 }
 
@@ -97,8 +106,8 @@ anode_t *ast_new_unary(arena_t *arena, ast_op_t op, anode_t *child) {
   return n;
 }
 
-anode_t *ast_new_type(arena_t *arena, ast_native_type_t t, anode_t *min,
-                      anode_t *max, bool bounded) {
+anode_t *ast_new_type(arena_t *arena, ast_native_type_t t, int min,
+                      int max, bool bounded) {
   anode_t *n = ast_new(arena, TYPE);
   n->type_name.type = t;
   n->type_name.upper_limit = max;
@@ -107,12 +116,12 @@ anode_t *ast_new_type(arena_t *arena, ast_native_type_t t, anode_t *min,
   return n;
 }
 
-anode_t *ast_new_declaration(arena_t *arena, const char *name, anode_t *t,
+anode_t *ast_new_declaration(arena_t *arena, sp_t symbol, anode_t *t,
                              anode_t *expr) {
   anode_t *n = ast_new(arena, DECLARATION);
   n->declaration.expr = expr;
   n->declaration.t = t;
-  strcpy(n->declaration.identifier, name);
+  n->declaration.symbol = symbol;
   return n;
 }
 
@@ -165,11 +174,11 @@ int ast_get_ival(anode_t *ast) {
   return ast->ivar;
 }
 
-const char *ast_get_identifier(anode_t *ast) {
-  if (ast->type != VARIABLE)
-    return NULL;
-  return ast->identifier;
-}
+//const char *ast_get_identifier(anode_t *ast) {
+//  if (ast->type != VARIABLE)
+//    return NULL;
+//  return ast->identifier;
+//}
 
 anode_t *ast_get_lchild(anode_t *ast) {
   if (ast->type != BI_OP)
@@ -229,8 +238,6 @@ anode_t *ast_simplify_expr(arena_t *arena, anode_t *ast) {
     return ast;
   }
   case TYPE:
-    ast->type_name.lower_limit = ast_simplify_expr(arena, ast->type_name.lower_limit);
-    ast->type_name.upper_limit = ast_simplify_expr(arena, ast->type_name.upper_limit);
     return ast;
   case DECLARATION: {
     if (ast->declaration.expr != NULL)
@@ -270,6 +277,8 @@ anode_t *ast_simplify_expr(arena_t *arena, anode_t *ast) {
     }
     return ast;
   }
+  case FUNC_DEF:
+    return ast; 
   }
   return NULL;
 }
@@ -301,7 +310,7 @@ void _print_ast(anode_t *ast, size_t depth) {
     printf("%d", ast->ivar);
     break;
   case VARIABLE:
-    printf("%s", ast->identifier);
+    printf("<%d : %d>", ast->symbol.table, ast->symbol.idx);
     break;
   case BI_OP:
     printf("(");
@@ -316,18 +325,14 @@ void _print_ast(anode_t *ast, size_t depth) {
     break;
   case TYPE: {
     if (ast->type_name.bounded) {
-      printf("int <");
-      _print_ast(ast->type_name.lower_limit, depth);
-      printf(",");
-      _print_ast(ast->type_name.upper_limit, depth);
-      printf(">");
+      printf("int <%d, %d>", ast->type_name.lower_limit, ast->type_name.upper_limit);
     } else {
       printf("int");
     }
   } break;
   case DECLARATION: {
     _print_ast(ast->declaration.t, depth);
-    printf(" %s", ast->declaration.identifier);
+    printf(" <%d : %d> ", ast->declaration.symbol.table, ast->declaration.symbol.idx);
     if (ast->declaration.expr != NULL) {
       printf(" = ");
       _print_ast(ast->declaration.expr, depth);
@@ -377,6 +382,18 @@ void _print_ast(anode_t *ast, size_t depth) {
       printf("  ");
     }
     printf("}");
+    break;
+  case FUNC_DEF:
+    _print_ast(ast->func_def.type, depth);
+    printf(" %s(", ast->func_def.func_name);
+    for(int i = 0; i < ast->func_def.args->len; i++)
+    {
+      _print_ast(list_get_at(ast->func_def.args, i), depth);
+      if(i < ast->func_def.args->len - 1)
+        printf(", ");
+    }
+    printf(")\n");
+    _print_ast(ast->func_def.stmt, depth+1);
     break;
   }
 }

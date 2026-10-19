@@ -1,8 +1,9 @@
 {
   int somevar = 3;
   defer while 3 {
-    defer hello = 1 + 3 * 2;
     int hello = 3;
+    int _some_kind_of_var;
+    defer hello = 1 + 3 * 2;
     if 1 
       defer hello = 1 * (1 + _some_kind_of_var * 4);
     else {
