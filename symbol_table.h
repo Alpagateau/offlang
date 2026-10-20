@@ -16,6 +16,7 @@ struct symbol
     int  min;
     int  max;
   } type;
+
   union {
     int ival;
   } def_val;
