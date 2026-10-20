@@ -40,6 +40,7 @@ int compile_per_file(FILE *file) {
   }
   printf("Got %zu errors\n", err_len);
 
+  symbol_list_free(stl);
   arena_free(a);
 
   return 0;

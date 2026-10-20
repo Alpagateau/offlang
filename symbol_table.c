@@ -58,14 +58,14 @@ sp_t symbol_add(stl_t* list, int table, symbol_t s)
   };
 }
 
-void symbol_list_free(stl_t* stl)
+void symbol_list_free(stl_t stl)
 {
-  for(int i = 0; i < stl->len; i++)
+  for(int i = 0; i < stl.len; i++)
   {
-    symbol_table_free(stl->sts[i]);
+    symbol_table_free(stl.sts[i]);
   }
-  free(stl->sts);
-  free(stl);
+  free(stl.sts);
+  //free(stl);
 }
 
 void symbol_table_free(st_t st)

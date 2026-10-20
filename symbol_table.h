@@ -6,11 +6,14 @@
 
 #define SYMBOL_LEN 64
 
+typedef enum {SYM_VARIABLE, SYM_FUNC} symbol_kind_t;
+
 struct symbol
 {
   char identifier[SYMBOL_LEN];
   size_t line_num;
   size_t char_num;
+
   struct {
     bool is_bounded;
     int  min;
@@ -54,7 +57,7 @@ sp_t search_symbol(
     int table, 
     const char* name);
 
-void symbol_list_free(stl_t* stl);
+void symbol_list_free(stl_t stl);
 void symbol_table_free(st_t st);
 
 #endif

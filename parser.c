@@ -212,7 +212,6 @@ parse_result parse_declaration(parser_ctx *ctx) {
   else
     lexer_consume_token(ctx->l);
 
-  ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
   symbol_t s = (symbol_t){.line_num = lexer_get_line(ctx->l),
                           .char_num = lexer_get_char(ctx->l),
                           .type.is_bounded = false};
@@ -351,7 +350,9 @@ parse_result parse_block(parser_ctx *ctx) {
 
   lexer_consume_token(ctx->l);
   parse_result res;
-  list_t *list = list_new(ctx->a);
+  list_t *list = list_new(ctx->a); 
+
+  ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
 
   while (lexer_peek_token(ctx->l).kind != LX_CCRL_BRA) {
     parse_result stmt = parse_statement(ctx);
@@ -369,6 +370,7 @@ parse_result parse_block(parser_ctx *ctx) {
   res.is_ok = true;
   res.line_num = lexer_get_line(ctx->l);
   res.char_num = lexer_get_char(ctx->l);
+
   ctx->current_table = old_table;
   return res;
 }
