@@ -1,0 +1,159 @@
+// This is a comment
+/* And this is a multiline comment (C Style) */
+
+// File management
+#include "otherfile.off" // other off source file can be loaded. No header file required
+#cinclude <stdio.h>      // C headers can also be included. All their types, defines and functions will be imported
+
+// Integer types
+char c;
+uchar uc;
+short s;
+ushort us;
+int i;
+uint ui;
+long l;
+ulong ul;
+llong ll;
+ullong ull;
+
+// Floating types
+float f;
+double d;
+ldouble ld;
+
+//All numeral types can be bounded
+char<-3, 8> bc; //bc can only be between -3 and 8 at any point.
+float<0, 4.8> bf;
+
+// by default, this will generate a warning, but bi will be given the closest value that's in bound (here, 156)
+int<156, 890> bi = 3; 
+
+//Other types
+bool b;
+
+// Pointers
+int^ pi; // A pointer to an int
+
+// Unlike in C, pointers are attached to the type. so in:
+int^ pi1, pi2;  // both pi1 and pi2 are pointers to an int.
+int<7, 9>^ bpi; // ofc, you can take the pointer to a bounded type. 
+
+
+//Structured types
+struct str{
+  int field1;
+  uint<3, 8> field2 = 4;
+  //In general, any type followed by a name;
+  //They can also be given default values.
+};
+
+union u{
+// All the fields in a union take the same memory space (like in C)
+  int field1;  
+  uint field2;
+  char field3;
+};
+
+flag fl{
+  SOME_FLAG1,
+  SOME_FLAG2,
+  SOME_FLAG3
+}; 
+
+/* Flags are similar to C enums, but internally, they are guarantied to be or-able. 
+Here, internally :
+- SOME_FLAG1 would be 1
+- SOME_FLAG2 would be 2
+- SOME_FLAG3 would be 4
+some that SOME_FLAG1 | SOME_FLAG2 would be valid.
+*/
+
+enum old_enum { //enum can work similarly to C 
+  MEMBER1,
+  MEMBER2,
+  MEMBER3
+};
+
+//But you can also give them types
+enum new_enum {
+  NEWMEMBER1 : float<-2, 9>,
+  NEWMEMBER2 : int,
+  NEWMEMBER2bis : int, // you can have the same type multiple times
+  NEWMEMBER3 //Even in enum with typed members, you can have untyped ones
+};
+
+// Unlike C, an enum is not considered an integer.
+
+// Renamed types
+typedef uint size_t; //from now on, size_t is an equivalent to uint
+
+// Types decorators
+const int n = 3; // a const cannot be set. It thus must be given a value;
+local int counter; // local tells the compiler that a global variable is only accessible in this file.
+
+fn(int, int<3, 9>) some; // a function "pointer"
+fn(double, int<3, 9>) : float some_other;
+
+//Functions
+fn some_func() : void {
+}
+
+// is equivalent to 
+fn some_func() {
+}
+
+fn some_other_func(new_enum ne) : int<0, 10> {
+
+  float value = 0.8;
+  float^ pval = ^val; //getting the pointer to a variable
+  float val2 = @pval; //pointer dereference. 
+
+  match ne {
+    NEWMEMBER1(v) {
+      // Here, v is a float<-2, 9>
+      return (int)v;
+    }
+    NEWMEMBER2(p) return p; // here, v is an int 
+    // It will generate a warning, since p is an int, but the function must return an int<0, 10>.
+    // as usual, it will stick to the closest in range value. 
+    default {return 0} // default matched with anything but doesnt give a value.
+  }
+  // match statements will generate an error if all possibilities arent accounted for
+}
+
+// pure functions enforce their purity (no global variable can be accessed nor changed) 
+// No internal state can be kept either. 
+// If C functions are called within a pure function, the number of calls and the optimisations are given to the compiler.
+pure add_mul(int a, int b, int c) : int {
+  return a + b * c;
+}
+
+//export makes a function visible to C code
+export fn something(int<8, 10> value) : int {
+  return value + 1;
+}
+
+fn main(int argc, char^^ argv) : int {
+  printf("Hello World\n"); // Call to a c function (included from stdio)
+  defer printf("Goodbye world\n"); // Defer moves the statement to the end of the block, only before the return if there's one
+  {
+    //Sub scopes are possible
+    int i = 0;
+    int j;
+    j = 8 + i;
+  }
+  // here, i and j are not accessible
+
+
+  FILE* f = stdin; // this is straight up C
+  int<-1, 256> c = fgetc(f);
+
+  while c != (int)FEOF {
+    fputc(stdout, c);
+  }
+
+  return 0;
+}
+
+// tho i didnt give an example, arrays work as in C
