@@ -1,6 +1,7 @@
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
 
+#include "types.h"
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -10,19 +11,17 @@ typedef enum {SYM_VARIABLE, SYM_FUNC} symbol_kind_t;
 
 struct symbol
 {
+  symbol_kind_t kind;
   char identifier[SYMBOL_LEN];
   size_t line_num;
   size_t char_num;
 
-  struct {
-    bool is_bounded;
-    int  min;
-    int  max;
-  } type;
+  type_t* type;
 
   union {
     int ival;
   } def_val;
+
 };
 
 typedef struct symbol symbol_t;

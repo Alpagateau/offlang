@@ -3,6 +3,7 @@
 
 #include "arena.h"
 #include "symbol_table.h"
+#include "types.h"
 #include <stdbool.h>
 
 struct ast_node;
@@ -25,9 +26,6 @@ typedef enum {
   BI_OP,
   UN_OP,
   
-  //Type system
-  TYPE,
-
   //Statements
   DECLARATION,
   ASSIGNMENT,
@@ -42,7 +40,6 @@ typedef enum {
 } ast_type_t;
 
 typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } ast_op_t;
-typedef enum { TYPE_INT } ast_native_type_t;
 
 anode_t *ast_new(arena_t *arena, ast_type_t type);
 
@@ -50,8 +47,10 @@ anode_t *ast_new_int(arena_t *arena, int value);
 anode_t *ast_new_var(arena_t *arena, sp_t symbol);
 anode_t *ast_new_binary(arena_t *arena, ast_op_t op, anode_t *lc, anode_t *rc);
 anode_t *ast_new_unary(arena_t *arena, ast_op_t op, anode_t *child);
-anode_t *ast_new_type(arena_t *arena, ast_native_type_t t,int min, int max, bool bounded);
-anode_t *ast_new_declaration(arena_t *arena, sp_t symbol, anode_t* t,anode_t* expr);
+
+//anode_t *ast_new_type(arena_t *arena, type_t* type);
+
+anode_t *ast_new_declaration(arena_t *arena, sp_t symbol, anode_t* expr);
 anode_t *ast_new_assigment(arena_t *arena, anode_t* lv, anode_t* expr);
 anode_t *ast_new_if_branch(arena_t *arena, anode_t* cond, anode_t *then, anode_t *otherwise);
 anode_t *ast_new_while_loop(arena_t *arena, anode_t* cond, anode_t *then);

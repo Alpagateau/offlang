@@ -25,6 +25,7 @@ typedef enum {
   // Punctuation
   LX_COMMA,
   LX_EQ,
+  LX_COLUMN,
   LX_SEMICOLUMN,
   LX_OPAR,
   LX_CPAR,

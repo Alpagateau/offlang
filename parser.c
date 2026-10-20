@@ -4,6 +4,7 @@
 #include "errors.h"
 #include "lexer.h"
 #include "symbol_table.h"
+#include "types.h"
 #include <stdarg.h>
 #include <string.h>
 
@@ -150,13 +151,9 @@ parse_result parse_type(parser_ctx *ctx) {
   }
   parse_result res;
   lexer_consume_token(ctx->l);
-  ast_native_type_t nt = TYPE_INT;
-  bool is_bounded = false;
-  int max = 0;
-  int min = 0;
+  type_t* t = type_new_primary(T_INT);
   if (parser_expect(ctx, LX_LT)) {
     lexer_consume_token(ctx->l);
-    is_bounded = true;
     parse_result bmin = parse_expr(ctx);
     if (!bmin.is_ok)
       return bmin;
@@ -168,7 +165,6 @@ parse_result parse_type(parser_ctx *ctx) {
 
     parse_result bmax = parse_expr(ctx);
 
-    is_bounded = true;
     if (!parser_expect(ctx, LX_GT))
       return parser_new_error(ctx, "End the boundary by the '>' character");
     lexer_consume_token(ctx->l);
@@ -178,11 +174,13 @@ parse_result parse_type(parser_ctx *ctx) {
 
     if(ast_get_type(bmin.result) != INT_LIT || ast_get_type(bmax.result) != INT_LIT)
       return parser_new_error(ctx, "Boudaries need to be integer expressions");
-    min = ast_get_ival(bmin.result);
-    max = ast_get_ival(bmax.result);
+    int min = ast_get_ival(bmin.result);
+    int max = ast_get_ival(bmax.result);
+    t = type_new_bounded(t, min, max);
   }
+
   res.is_ok = true;
-  res.result = ast_new_type(ctx->a, nt, min, max, is_bounded);
+  res.type = t;
   return res;
 }
 
@@ -214,11 +212,11 @@ parse_result parse_declaration(parser_ctx *ctx) {
 
   symbol_t s = (symbol_t){.line_num = lexer_get_line(ctx->l),
                           .char_num = lexer_get_char(ctx->l),
-                          .type.is_bounded = false};
+                          .type = t.type};
   strcpy(s.identifier, name.identifier);
   sp_t symbol = symbol_add(ctx->stl, ctx->current_table, s);
   res.is_ok = true;
-  res.result = ast_new_declaration(ctx->a, symbol, t.result, expr_n);
+  res.result = ast_new_declaration(ctx->a, symbol, expr_n);
   res.char_num = lexer_get_char(ctx->l);
   res.line_num = lexer_get_line(ctx->l);
   return res;

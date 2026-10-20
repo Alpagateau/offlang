@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "lexer.h"
 #include "symbol_table.h"
+#include "types.h"
 
 typedef struct {
   bool is_ok;
@@ -11,6 +12,7 @@ typedef struct {
   size_t char_num;
   union {
     anode_t *result;
+    type_t  *type;
     const char *err;
   };
 } parse_result;

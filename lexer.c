@@ -7,6 +7,7 @@
 char_lexem_pair_t single_char_tokens[] = {
     {'=', LX_EQ},
     {',', LX_COMMA},
+    {':', LX_COLUMN},
     {';', LX_SEMICOLUMN},
     {'(', LX_OPAR},     
     {')', LX_CPAR},     

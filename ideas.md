@@ -42,5 +42,8 @@ A type could be either:
 - default type (int currently) (done)
 - bound type (int<number, number>) (done)
 
-# Symbol table
-
+# First iterations :
+- function definitions 
+- function calls
+- pointers 
+- char types
