@@ -26,7 +26,6 @@ parse_result parse_integer(parser_ctx *ctx) {
     lexem_t lex = lexer_consume_token(ctx->l);
     res.result = ast_new_int(ctx->a, lex.ival);
     ast_set_pos(res.result, lexer_get_line(ctx->l), lexer_get_char(ctx->l));
-    // PARSE_LOG("parsed int (%d)", lex.ival);
   } else {
     res = parser_new_error(ctx, "Could not parse int, got (%d) instead of (%d)",
                            lexer_peek_token(ctx->l).kind, LX_INT);
@@ -151,7 +150,7 @@ parse_result parse_type(parser_ctx *ctx) {
   }
   parse_result res;
   lexer_consume_token(ctx->l);
-  type_t* t = type_new_primary(T_INT);
+  type_t *t = type_new_primary(T_INT);
   if (parser_expect(ctx, LX_LT)) {
     lexer_consume_token(ctx->l);
     parse_result bmin = parse_expr(ctx);
@@ -172,11 +171,17 @@ parse_result parse_type(parser_ctx *ctx) {
     bmin.result = ast_simplify_expr(ctx->a, bmin.result);
     bmax.result = ast_simplify_expr(ctx->a, bmax.result);
 
-    if(ast_get_type(bmin.result) != INT_LIT || ast_get_type(bmax.result) != INT_LIT)
+    if (ast_get_type(bmin.result) != INT_LIT ||
+        ast_get_type(bmax.result) != INT_LIT)
       return parser_new_error(ctx, "Boudaries need to be integer expressions");
     int min = ast_get_ival(bmin.result);
     int max = ast_get_ival(bmax.result);
     t = type_new_bounded(t, min, max);
+  }
+
+  while (parser_expect(ctx, LX_CARAT)) {
+    t = type_new_pointer(t);
+    lexer_consume_token(ctx->l);
   }
 
   res.is_ok = true;
@@ -348,7 +353,7 @@ parse_result parse_block(parser_ctx *ctx) {
 
   lexer_consume_token(ctx->l);
   parse_result res;
-  list_t *list = list_new(ctx->a); 
+  list_t *list = list_new(ctx->a);
 
   ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
 
@@ -392,5 +397,83 @@ parse_result parse_statement(parser_ctx *ctx) {
   } else {
     res = parse_assignment(ctx);
   }
+  return res;
+}
+
+parse_result parse_func_def(parser_ctx *ctx) {
+  if (!parser_expect(ctx, LX_FUNC))
+    return parser_new_error(ctx, "Need 'func' or 'fn' to define a function");
+  lexer_consume_token(ctx->l);
+
+  if (!parser_expect(ctx, LX_IDENT))
+    return parser_new_error(ctx, "Need identifier after 'fn' or 'func'");
+  lexem_t name = lexer_consume_token(ctx->l);
+
+  symbol_t sym = (symbol_t){.kind = SYM_FUNC,
+                            .line_num = lexer_get_line(ctx->l),
+                            .char_num = lexer_get_char(ctx->l)};
+  strcpy(sym.identifier, name.identifier);
+
+  if (!parser_expect(ctx, LX_OPAR))
+    return parser_new_error(ctx, "Need parenthesis to define a function");
+
+  lexer_consume_token(ctx->l);
+
+  int old_table = ctx->current_table;
+  ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
+
+  type_t *t = type_new_func();
+
+  while (!parser_expect(ctx, LX_CPAR)) {
+    if (t->func.len > 0) {
+      if (!parser_expect(ctx, LX_COMMA))
+        return parser_new_error(ctx, "Need a comma after each argument");
+
+      lexer_consume_token(ctx->l);
+    }
+
+    parse_result type_arg = parse_type(ctx);
+    if (!type_arg.is_ok){
+      return type_arg;
+    }
+
+    if (!parser_expect(ctx, LX_IDENT))
+      return parser_new_error(ctx, "Need an identifier");
+
+    lexem_t ident = lexer_consume_token(ctx->l);
+
+    // Add the type to the func type
+    type_func_add_arg(t, type_arg.type);
+
+    // Create the symbol for the func args
+    symbol_t arg_sym = (symbol_t){.type = type_arg.type,
+                                  .line_num = lexer_get_line(ctx->l),
+                                  .char_num = lexer_get_char(ctx->l)};
+    strcpy(arg_sym.identifier, ident.identifier);
+    symbol_add(ctx->stl, ctx->current_table, arg_sym);
+  }
+  lexer_consume_token(ctx->l);
+
+  if (parser_expect(ctx, LX_COLUMN)) {
+    lexer_consume_token(ctx->l);
+    parse_result p = parse_type(ctx);
+    if (!p.is_ok)
+      return p;
+    type_func_set_ret(t, p.type);
+  } else {
+    type_func_set_ret(t, type_new_primary(T_VOID));
+  }
+
+  sp_t s = symbol_add(ctx->stl, ctx->current_table, sym);
+
+  parse_result stmt = parse_statement(ctx);
+  if (!stmt.is_ok)
+    return stmt;
+
+  ctx->current_table = old_table;
+
+  parse_result res;
+  res.is_ok = true;
+  res.result = ast_new_func_def(ctx->a, s, stmt.result);
   return res;
 }

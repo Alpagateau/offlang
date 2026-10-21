@@ -21,6 +21,7 @@ typedef enum {
   LX_WHILE,
   LX_DEFER,
   LX_RETURN,
+  LX_FUNC,
 
   // Punctuation
   LX_COMMA,
@@ -34,7 +35,8 @@ typedef enum {
   LX_OCRL_BRA,
   LX_CCRL_BRA,
   LX_LT,
-  LX_GT
+  LX_GT,
+  LX_CARAT
 } lexem_kind_t;
 
 typedef struct {

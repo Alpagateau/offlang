@@ -1,4 +1,5 @@
 #include "symbol_table.h"
+#include "types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,16 @@ sp_t symbol_add(stl_t* list, int table, symbol_t s)
   };
 }
 
+const char* symbol_get_name(stl_t* list, sp_t sym)
+{
+  return list->sts[sym.table].symbols[sym.idx].identifier;
+}
+
+type_t* symbol_get_type(stl_t* list, sp_t sym)
+{
+  return list->sts[sym.table].symbols[sym.idx].type;
+}
+
 void symbol_list_free(stl_t stl)
 {
   for(int i = 0; i < stl.len; i++)
@@ -70,5 +81,9 @@ void symbol_list_free(stl_t stl)
 
 void symbol_table_free(st_t st)
 {
+  for(int i = 0; i < st.len; i++)
+  {
+    type_free(st.symbols[i].type);
+  }
   free(st.symbols);
 }

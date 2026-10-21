@@ -17,6 +17,7 @@ char_lexem_pair_t single_char_tokens[] = {
     {'}', LX_CCRL_BRA},
     {'<', LX_LT},
     {'>', LX_GT},
+    {'^', LX_CARAT},
     {0, LX_ERR}};
 
 keyword_lexem_pair_t keyword_tokens[] = {
@@ -27,6 +28,8 @@ keyword_lexem_pair_t keyword_tokens[] = {
     {"defer" , LX_DEFER}, 
     {"ret"   , LX_RETURN},
     {"return", LX_RETURN},
+    {"fn"    , LX_FUNC},
+    {"func"  , LX_FUNC},
     {NULL, LX_ERR}
 };
 

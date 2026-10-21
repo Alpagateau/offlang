@@ -57,8 +57,7 @@ anode_t *ast_new_while_loop(arena_t *arena, anode_t* cond, anode_t *then);
 anode_t *ast_new_defer(arena_t *arena, anode_t *stmt);
 anode_t *ast_new_return(arena_t *arena, anode_t *ret);
 anode_t *ast_new_block(arena_t *arena, list_t* lst);
-anode_t *ast_new_func_def(arena_t *arena, anode_t *t, 
-    list_t *args, anode_t *stmt, const char* name);
+anode_t *ast_new_func_def(arena_t *arena, sp_t sp, anode_t* stmt);
 
 ast_type_t ast_get_type(anode_t* ast);
 
@@ -66,13 +65,12 @@ int  ast_get_ival(anode_t* ast);
 
 void ast_set_pos(anode_t* ast, size_t l, size_t c);
 
-//const char* ast_get_identifier(anode_t* ast);
 anode_t* ast_get_lchild(anode_t* ast);
 anode_t* ast_get_rchild(anode_t* ast);
 
 anode_t* ast_simplify_expr(arena_t* arena, anode_t* ast);
 
-void print_ast(anode_t* ast);
+void print_ast(anode_t* ast, stl_t* stl);
 
 // LISTS
 list_t* list_new(arena_t* arena);

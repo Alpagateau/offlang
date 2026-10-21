@@ -56,6 +56,9 @@ sp_t search_symbol(
     int table, 
     const char* name);
 
+const char* symbol_get_name(stl_t* list, sp_t sym);
+type_t* symbol_get_type(stl_t* list, sp_t sym);
+
 void symbol_list_free(stl_t stl);
 void symbol_table_free(st_t st);
 

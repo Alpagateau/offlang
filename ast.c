@@ -21,13 +21,13 @@ struct ast_node {
     } binary;
 
     struct {
-      ast_op_t op;
       anode_t *child;
+      ast_op_t op;
     } unary;
 
     struct {
-      sp_t symbol;
       anode_t *expr;
+      sp_t symbol;
     } declaration;
 
     struct {
@@ -59,10 +59,8 @@ struct ast_node {
     } block;
 
     struct {
-      char func_name[64];
-      anode_t *type;
-      list_t *args;
-      anode_t *stmt;
+      sp_t symbol;
+      anode_t* stmt;
     } func_def;
   };
 };
@@ -99,12 +97,6 @@ anode_t *ast_new_unary(arena_t *arena, ast_op_t op, anode_t *child) {
   n->unary.child = child;
   return n;
 }
-
-//anode_t *ast_new_type(arena_t *arena, type_t *t) {
-//  anode_t *n = ast_new(arena, TYPE);
-//  n->type_val = t;
-//  return n;
-//}
 
 anode_t *ast_new_declaration(arena_t *arena, sp_t symbol, anode_t *expr) {
   anode_t *n = ast_new(arena, DECLARATION);
@@ -154,6 +146,14 @@ anode_t *ast_new_block(arena_t *arena, list_t *lst) {
   return n;
 }
 
+anode_t *ast_new_func_def(arena_t *arena, sp_t sp, anode_t* stmt)
+{
+  anode_t *n = ast_new(arena, FUNC_DEF);
+  n->func_def.stmt = stmt;
+  n->func_def.symbol = sp;
+  return n;
+}
+
 ast_type_t ast_get_type(anode_t *ast) { return ast->type; }
 
 int ast_get_ival(anode_t *ast) {
@@ -161,12 +161,6 @@ int ast_get_ival(anode_t *ast) {
     return 0;
   return ast->ivar;
 }
-
-// const char *ast_get_identifier(anode_t *ast) {
-//   if (ast->type != VARIABLE)
-//     return NULL;
-//   return ast->identifier;
-// }
 
 anode_t *ast_get_lchild(anode_t *ast) {
   if (ast->type != BI_OP)
@@ -288,7 +282,7 @@ void _print_op(ast_op_t op) {
   }
 }
 
-void _print_ast(anode_t *ast, size_t depth) {
+void _print_ast(anode_t *ast, stl_t* stl,  size_t depth) {
   if (ast == NULL) {
     printf("[ NULL ]");
     return;
@@ -298,60 +292,60 @@ void _print_ast(anode_t *ast, size_t depth) {
     printf("%d", ast->ivar);
     break;
   case VARIABLE:
-    printf("<%d : %d>", ast->symbol.table, ast->symbol.idx);
+    printf("%s", stl->sts[ast->symbol.table].symbols[ast->symbol.idx].identifier);
     break;
   case BI_OP:
     printf("(");
-    _print_ast(ast->binary.lchild, depth);
+    _print_ast(ast->binary.lchild, stl,  depth);
     _print_op(ast->binary.op);
-    _print_ast(ast->binary.rchild, depth);
+    _print_ast(ast->binary.rchild, stl,  depth);
     printf(")");
     break;
   case UN_OP:
     _print_op(ast->unary.op);
-    _print_ast(ast->unary.child, depth);
+    _print_ast(ast->unary.child, stl,  depth);
     break;
   //case TYPE:
   //  type_print(ast->type_val);
   //  break;
   case DECLARATION: {
-    printf("(type : TODO) <%d : %d> ", ast->declaration.symbol.table,
-           ast->declaration.symbol.idx);
+    type_print(symbol_get_type(stl, ast->declaration.symbol));
+    printf(" %s", symbol_get_name(stl, ast->declaration.symbol));
     if (ast->declaration.expr != NULL) {
       printf(" = ");
-      _print_ast(ast->declaration.expr, depth);
+      _print_ast(ast->declaration.expr, stl,  depth);
     }
   } break;
   case ASSIGNMENT:
-    _print_ast(ast->assignment.lval, depth);
+    _print_ast(ast->assignment.lval, stl,  depth);
     printf(" = ");
-    _print_ast(ast->assignment.expr, depth);
+    _print_ast(ast->assignment.expr, stl,  depth);
     break;
   case IF_BRANCH:
     printf("if (");
-    _print_ast(ast->if_branch.cond, depth);
+    _print_ast(ast->if_branch.cond, stl,  depth);
     printf(") then ");
-    _print_ast(ast->if_branch.then, depth);
+    _print_ast(ast->if_branch.then, stl,  depth);
     {
       if (ast->if_branch.otherwise != NULL) {
         printf(" else ");
-        _print_ast(ast->if_branch.otherwise, depth);
+        _print_ast(ast->if_branch.otherwise, stl,  depth);
       }
     }
     break;
   case WHILE_LOOP:
     printf("while (");
-    _print_ast(ast->while_loop.cond, depth);
+    _print_ast(ast->while_loop.cond, stl,  depth);
     printf(") do ");
-    _print_ast(ast->while_loop.then, depth);
+    _print_ast(ast->while_loop.then, stl,  depth);
     break;
   case DEFER:
     printf("defer ");
-    _print_ast(ast->defer.stmt, depth);
+    _print_ast(ast->defer.stmt, stl,  depth);
     break;
   case RETURN:
     printf("return ");
-    _print_ast(ast->ret.expr, depth);
+    _print_ast(ast->ret.expr, stl,  depth);
     break;
   case BLOCK:
     printf("{\n");
@@ -359,7 +353,7 @@ void _print_ast(anode_t *ast, size_t depth) {
       for (int j = 0; j < depth; j++) {
         printf("  ");
       }
-      _print_ast(list_get_at(ast->block.stmts, i), depth + 1);
+      _print_ast(list_get_at(ast->block.stmts, i), stl,  depth + 1);
       printf("\n");
     }
     for (int j = 0; j < depth - 1; j++) {
@@ -367,23 +361,28 @@ void _print_ast(anode_t *ast, size_t depth) {
     }
     printf("}");
     break;
-  case FUNC_DEF:
-    _print_ast(ast->func_def.type, depth);
-    printf(" %s(", ast->func_def.func_name);
-    for (int i = 0; i < ast->func_def.args->len; i++) {
-      _print_ast(list_get_at(ast->func_def.args, i), depth);
-      if (i < ast->func_def.args->len - 1)
-        printf(", ");
+  case FUNC_DEF:{
+    printf("func %s(", symbol_get_name(stl, ast->func_def.symbol));  
+    type_t* func_type = symbol_get_type(stl, ast->func_def.symbol);
+    printf("(%p)[", func_type);
+    type_print(func_type);
+    printf("] ");
+    fflush(stdout);
+    for(int i = 0; i < func_type->func.len; i++)
+    {
+      type_print(stl->sts[ast->func_def.symbol.table].symbols[ast->func_def.symbol.idx].type->func.args[i]);
+      printf(",");
     }
-    printf(")\n");
-    _print_ast(ast->func_def.stmt, depth + 1);
+    printf(") ");
+    _print_ast(ast->func_def.stmt, stl, depth+1);
     break;
+  }
   }
 }
 
-void print_ast(anode_t *ast) {
+void print_ast(anode_t *ast, stl_t* stl) {
   printf("AST node size : %zu\n", sizeof(anode_t));
-  _print_ast(ast, 1);
+  _print_ast(ast, stl,  1);
 }
 
 void ast_set_pos(anode_t *ast, size_t l, size_t c) {

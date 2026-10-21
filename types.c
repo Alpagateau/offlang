@@ -28,6 +28,32 @@ type_t* type_new_bounded(type_t* base, int min, int max)
   return data;
 }
 
+type_t* type_new_func()
+{
+  type_t* data = (type_t*)malloc(sizeof(type_t));
+  data->kind = TYPE_FUNC;
+  data->func.len = 0;
+  data->func.capacity = 1;
+  data->func.args = (type_t**)malloc(sizeof(type_t*));
+  return data;
+}
+void type_func_add_arg(type_t* f, type_t* t)
+{
+  if(f->func.len >= f->func.capacity - 1)
+  {
+    f->func.capacity *= 2;
+    f->func.args = (type_t**)realloc(f->func.args, sizeof(size_t*) * f->func.capacity);
+  }
+
+  f->func.args[f->func.len++] = t;
+  printf("F #args : %zu\n", f->func.len );
+}
+
+void type_func_set_ret(type_t* f, type_t* t)
+{
+  f->func.ret_type = t;
+}
+
 void type_free(type_t* t)
 {
   switch(t->kind){
@@ -39,7 +65,14 @@ void type_free(type_t* t)
       break;
     case TYPE_PRIMITIVE:
     case TYPE_NAMED:
+      break;
     case TYPE_FUNC:
+      type_free(t->func.ret_type);
+      for(int i = 0; i < t->func.len; i++)
+      {
+        type_free(t->func.args[i]);
+      }
+      free(t->func.args);
       break;
   }
   free(t);
@@ -99,6 +132,10 @@ void print_type_primitive(primitive_type_t t)
 
 void type_print(type_t* t)
 {
+  if(t == NULL) {
+    printf("[NULL]");
+    return;
+  }
   switch(t->kind)
   {
     case TYPE_PRIMITIVE:
@@ -111,7 +148,9 @@ void type_print(type_t* t)
     case TYPE_POINTER:
       type_print(t->pointer.base);
       printf("^");
+      break;
     default:
       printf("SHould not happen yet");
+      break;
   }
 }

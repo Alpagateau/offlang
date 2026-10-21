@@ -22,9 +22,9 @@ int compile_per_file(FILE *file) {
     .current_table = 0,
   };
   lexer_init(file, &lexer);
-  parse_result res = parse_statement(&ctx);
+  parse_result res = parse_func_def(&ctx);
   if (res.is_ok) {
-    print_ast(res.result);
+    print_ast(res.result, ctx.stl);
     printf("\n");
   } else {
     printf("[PARSER ERROR](%zu:%zu) %s\n", res.line_num, res.char_num, res.err);

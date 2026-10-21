@@ -54,4 +54,7 @@ parse_result parse_block(parser_ctx *ctx);
 
 parse_result parse_statement(parser_ctx *ctx);
 
+// Func definition
+parse_result parse_func_def(parser_ctx *ctx);
+
 #endif
