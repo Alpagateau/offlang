@@ -1,5 +1,4 @@
 # Syntax idea
-
 ```c
 pure increment(int a)
 {
@@ -47,3 +46,6 @@ A type could be either:
 - function calls
 - pointers 
 - char types
+
+## Maybe later
+Implement the type system so that a each type is a singleton. Only one pointer for the type int exists, etc.... (better than allocating new memory each time)

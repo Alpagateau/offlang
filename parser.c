@@ -411,18 +411,18 @@ parse_result parse_func_def(parser_ctx *ctx) {
 
   symbol_t sym = (symbol_t){.kind = SYM_FUNC,
                             .line_num = lexer_get_line(ctx->l),
-                            .char_num = lexer_get_char(ctx->l)};
+                            .char_num = lexer_get_char(ctx->l)
+                           };
   strcpy(sym.identifier, name.identifier);
 
   if (!parser_expect(ctx, LX_OPAR))
     return parser_new_error(ctx, "Need parenthesis to define a function");
-
   lexer_consume_token(ctx->l);
 
   int old_table = ctx->current_table;
   ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
 
-  type_t *t = type_new_func();
+  type_t* t = type_new_func();
 
   while (!parser_expect(ctx, LX_CPAR)) {
     if (t->func.len > 0) {
@@ -446,7 +446,8 @@ parse_result parse_func_def(parser_ctx *ctx) {
     type_func_add_arg(t, type_arg.type);
 
     // Create the symbol for the func args
-    symbol_t arg_sym = (symbol_t){.type = type_arg.type,
+    symbol_t arg_sym = (symbol_t){.kind = SYM_VARIABLE,
+                                  .type = type_copy(type_arg.type),
                                   .line_num = lexer_get_line(ctx->l),
                                   .char_num = lexer_get_char(ctx->l)};
     strcpy(arg_sym.identifier, ident.identifier);
@@ -464,6 +465,7 @@ parse_result parse_func_def(parser_ctx *ctx) {
     type_func_set_ret(t, type_new_primary(T_VOID));
   }
 
+  sym.type = t;
   sp_t s = symbol_add(ctx->stl, ctx->current_table, sym);
 
   parse_result stmt = parse_statement(ctx);

@@ -68,6 +68,8 @@ type_t* type_new_func();
 void type_func_add_arg(type_t* f, type_t* t);
 void type_func_set_ret(type_t* f, type_t* t);
 
+type_t* type_copy(type_t* src);
+
 void type_free(type_t* t);
 
 void type_print(type_t* t);

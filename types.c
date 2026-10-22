@@ -33,8 +33,8 @@ type_t* type_new_func()
   type_t* data = (type_t*)malloc(sizeof(type_t));
   data->kind = TYPE_FUNC;
   data->func.len = 0;
-  data->func.capacity = 1;
-  data->func.args = (type_t**)malloc(sizeof(type_t*));
+  data->func.capacity = 2;
+  data->func.args = (type_t**)malloc(sizeof(type_t*) * 2);
   return data;
 }
 void type_func_add_arg(type_t* f, type_t* t)
@@ -46,7 +46,7 @@ void type_func_add_arg(type_t* f, type_t* t)
   }
 
   f->func.args[f->func.len++] = t;
-  printf("F #args : %zu\n", f->func.len );
+  printf("F #args : %zu\n", f->func.len);
 }
 
 void type_func_set_ret(type_t* f, type_t* t)
@@ -54,8 +54,33 @@ void type_func_set_ret(type_t* f, type_t* t)
   f->func.ret_type = t;
 }
 
+type_t* type_copy(type_t* src)
+{ 
+  type_t* data = (type_t*)malloc(sizeof(type_t));
+  data->kind = src->kind;
+  switch(data->kind)
+  {
+    case TYPE_PRIMITIVE:
+      data->prim_kind = src->prim_kind;
+      break;
+    case TYPE_BOUNDED:
+      data->bounded.base = type_copy(src->bounded.base);
+      data->bounded.max = src->bounded.max;
+      data->bounded.min = src->bounded.min;
+      break;
+    case TYPE_POINTER:
+      data->pointer.base = type_copy(src->pointer.base);
+      break;
+    default:
+      printf("[SHOULD NOT HAPPEN]");
+      break;
+  }
+  return data;
+}
+
 void type_free(type_t* t)
 {
+  if(t == NULL) return;
   switch(t->kind){
     case TYPE_BOUNDED:
       type_free(t->bounded.base);
@@ -67,11 +92,12 @@ void type_free(type_t* t)
     case TYPE_NAMED:
       break;
     case TYPE_FUNC:
-      type_free(t->func.ret_type);
       for(int i = 0; i < t->func.len; i++)
       {
+        fflush(stdout);
         type_free(t->func.args[i]);
       }
+      type_free(t->func.ret_type);
       free(t->func.args);
       break;
   }

@@ -1,6 +1,6 @@
 func main(int argc, int^^ argv) : int
 {
-  int somevar = 3;
+  int somevar = 3 + argc;
   defer while 3 {
     int hello = 3;
     int^^ _some_kind_of_var;

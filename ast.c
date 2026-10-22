@@ -364,9 +364,6 @@ void _print_ast(anode_t *ast, stl_t* stl,  size_t depth) {
   case FUNC_DEF:{
     printf("func %s(", symbol_get_name(stl, ast->func_def.symbol));  
     type_t* func_type = symbol_get_type(stl, ast->func_def.symbol);
-    printf("(%p)[", func_type);
-    type_print(func_type);
-    printf("] ");
     fflush(stdout);
     for(int i = 0; i < func_type->func.len; i++)
     {
