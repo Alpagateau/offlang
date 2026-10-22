@@ -62,6 +62,16 @@ struct ast_node {
       sp_t symbol;
       anode_t* stmt;
     } func_def;
+
+    struct {
+      anode_t *array;
+      anode_t *index;
+    } indexed;
+
+    struct {
+      anode_t *func;
+      list_t  *args;
+    } fcall;
   };
 };
 

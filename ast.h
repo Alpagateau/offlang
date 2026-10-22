@@ -25,6 +25,8 @@ typedef enum {
   VARIABLE, 
   BI_OP,
   UN_OP,
+  INDEXING,
+  CALLING,
   
   //Statements
   DECLARATION,
@@ -47,6 +49,8 @@ anode_t *ast_new_int(arena_t *arena, int value);
 anode_t *ast_new_var(arena_t *arena, sp_t symbol);
 anode_t *ast_new_binary(arena_t *arena, ast_op_t op, anode_t *lc, anode_t *rc);
 anode_t *ast_new_unary(arena_t *arena, ast_op_t op, anode_t *child);
+anode_t *ast_new_index(arena_t *arena, anode_t *expr  , anode_t *idx);
+anode_t *ast_new_fcall(arena_t *arena, anode_t *callee, list_t *args);
 
 //anode_t *ast_new_type(arena_t *arena, type_t* type);
 
