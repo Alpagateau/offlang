@@ -5,33 +5,39 @@
 #include <string.h>
 
 char_lexem_pair_t single_char_tokens[] = {
-    {'=', LX_EQ},
-    {',', LX_COMMA},
-    {':', LX_COLUMN},
-    {';', LX_SEMICOLUMN},
-    {'(', LX_OPAR},     
-    {')', LX_CPAR},     
-    {'[', LX_OSQR_BRA},
-    {']', LX_CSQR_BRA}, 
-    {'{', LX_OCRL_BRA}, 
-    {'}', LX_CCRL_BRA},
-    {'<', LX_LT},
-    {'>', LX_GT},
-    {'^', LX_CARAT},
-    {0, LX_ERR}};
+    {'=', LX_EQ},         {',', LX_COMMA},    {':', LX_COLUMN},
+    {';', LX_SEMICOLUMN}, {'(', LX_OPAR},     {')', LX_CPAR},
+    {'[', LX_OSQR_BRA},   {']', LX_CSQR_BRA}, {'{', LX_OCRL_BRA},
+    {'}', LX_CCRL_BRA},   {'<', LX_LT},       {'>', LX_GT},
+    {'^', LX_CARAT},      {0, LX_ERR}};
 
 keyword_lexem_pair_t keyword_tokens[] = {
-    {"int"   , LX_TYPE_INT}, 
-    {"if"    , LX_IF}, 
-    {"else"  , LX_ELSE}, 
-    {"while" , LX_WHILE}, 
-    {"defer" , LX_DEFER}, 
-    {"ret"   , LX_RETURN},
+    // Types
+    {"char", LX_TYPE_CHAR},
+    {"uchar", LX_TYPE_UCHAR},
+    {"short", LX_TYPE_SHORT},
+    {"ushort", LX_TYPE_USHORT},
+    {"int", LX_TYPE_INT},
+    {"uint", LX_TYPE_UINT},
+    {"long", LX_TYPE_LONG},
+    {"ulong", LX_TYPE_ULONG},
+    {"llong", LX_TYPE_LLONG},
+    {"ullong", LX_TYPE_ULLONG},
+    {"float", LX_TYPE_FLOAT},
+    {"double", LX_TYPE_DOUBLE},
+    {"ldouble", LX_TYPE_LDOUBLE},
+    {"bool", LX_TYPE_BOOL},
+    {"void", LX_TYPE_VOID},
+    // keywords
+    {"if", LX_IF},
+    {"else", LX_ELSE},
+    {"while", LX_WHILE},
+    {"defer", LX_DEFER},
+    {"ret", LX_RETURN},
     {"return", LX_RETURN},
-    {"fn"    , LX_FUNC},
-    {"func"  , LX_FUNC},
-    {NULL, LX_ERR}
-};
+    {"fn", LX_FUNC},
+    {"func", LX_FUNC},
+    {NULL, LX_ERR}};
 
 void lexer_init(FILE *f, lexer_t *l) {
   l->input_file = f;
@@ -186,7 +192,7 @@ lexem_t lexer_next_token(lexer_t *l) {
   lexer_consume_spaces(l);
   int c = lexer_peek(l);
 
-  if (isdigit(c)) { 
+  if (isdigit(c)) {
     return lexer_lex_integer(l);
   }
 
@@ -207,25 +213,17 @@ lexem_t lexer_next_token(lexer_t *l) {
   return (lexem_t){.kind = LX_ERR};
 }
 
-void lexer_throw_till_break(lexer_t *l)
-{
-  while(
-      lexer_peek_token(l).kind != LX_SEMICOLUMN 
-      && lexer_peek_token(l).kind != LX_CCRL_BRA 
-      && lexer_peek_token(l).kind != LX_ERR)
+void lexer_throw_till_break(lexer_t *l) {
+  while (lexer_peek_token(l).kind != LX_SEMICOLUMN &&
+         lexer_peek_token(l).kind != LX_CCRL_BRA &&
+         lexer_peek_token(l).kind != LX_ERR)
     lexer_consume_token(l);
   lexer_consume_token(l);
 }
 
-size_t lexer_get_line(lexer_t* l)
-{
-  return lexer_peek_token(l).line_num;
-}
+size_t lexer_get_line(lexer_t *l) { return lexer_peek_token(l).line_num; }
 
-size_t lexer_get_char(lexer_t* l)
-{
-  return lexer_peek_token(l).char_num;
-}
+size_t lexer_get_char(lexer_t *l) { return lexer_peek_token(l).char_num; }
 
 void lexer_print_lexem(lexem_t lexem) {
   printf("<(%zu:%zu) ", lexem.line_num, lexem.char_num);
@@ -272,6 +270,6 @@ lexem_t lexer_peek_at(lexer_t *l, size_t idx) {
 lexem_t lexer_consume_token(lexer_t *l) {
   lexem_t lex = l->next_lexems[l->next_idx];
   l->next_lexems[l->next_idx] = lexer_next_token(l);
-  l->next_idx = (l->next_idx+1)%LEXER_BUFFER_SIZE;
+  l->next_idx = (l->next_idx + 1) % LEXER_BUFFER_SIZE;
   return lex;
 }

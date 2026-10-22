@@ -1,15 +1,15 @@
-func main(int argc, int^^ argv) : int
+func main(int argc, char^^ argv) : int
 {
   int somevar = 3 + argc;
   defer while 3 {
     int hello = 3;
-    int^^ _some_kind_of_var;
+    ullong^^ _some_kind_of_var;
     defer hello = 1 + 3 * 2;
     if 1 
       defer hello = 1 * (1 + _some_kind_of_var * 4);
     else {
-      int<-4, 8> something = hello;
-      int<0, 4> something_else = something + 1;
+      float<-4, 8> something = hello;
+      double<0, 4> something_else = something + 1;
       if something {
         int noooo;
       }

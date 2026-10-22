@@ -19,8 +19,12 @@ struct symbol
   type_t* type;
 
   union {
-    int ival;
-  } def_val;
+    union {
+      int ival;
+    } default_value;
+
+    int child_table;
+  } info;
 
 };
 
@@ -56,6 +60,7 @@ sp_t search_symbol(
     int table, 
     const char* name);
 
+symbol_t symbol_get(stl_t* list, sp_t sym);
 const char* symbol_get_name(stl_t* list, sp_t sym);
 type_t* symbol_get_type(stl_t* list, sp_t sym);
 

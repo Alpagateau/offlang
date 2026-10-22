@@ -14,6 +14,7 @@ int compile_per_file(FILE *file) {
     .capacity = 1,
     .sts = malloc(sizeof(st_t))
   };
+
   symbol_table_new(&stl, -1);
   parser_ctx ctx = {
     .a = a,
@@ -21,6 +22,7 @@ int compile_per_file(FILE *file) {
     .stl = &stl,
     .current_table = 0,
   };
+
   lexer_init(file, &lexer);
   parse_result res = parse_func_def(&ctx);
   if (res.is_ok) {

@@ -14,8 +14,23 @@ typedef enum {
   LX_IDENT,
   LX_OP,
 
-  // Keywords
+  // Types keywords
+  LX_TYPE_CHAR,
+  LX_TYPE_UCHAR,
+  LX_TYPE_SHORT,
+  LX_TYPE_USHORT,
   LX_TYPE_INT,
+  LX_TYPE_UINT,
+  LX_TYPE_LONG,
+  LX_TYPE_ULONG,
+  LX_TYPE_LLONG,
+  LX_TYPE_ULLONG,
+  LX_TYPE_FLOAT,
+  LX_TYPE_DOUBLE,
+  LX_TYPE_LDOUBLE,
+  LX_TYPE_BOOL,
+  LX_TYPE_VOID,
+  // Keywords
   LX_IF,
   LX_ELSE,
   LX_WHILE,

@@ -59,6 +59,11 @@ sp_t symbol_add(stl_t* list, int table, symbol_t s)
   };
 }
 
+symbol_t symbol_get(stl_t* list, sp_t sym)
+{ 
+  return list->sts[sym.table].symbols[sym.idx];
+}
+
 const char* symbol_get_name(stl_t* list, sp_t sym)
 {
   return list->sts[sym.table].symbols[sym.idx].identifier;

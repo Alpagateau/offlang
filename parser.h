@@ -26,8 +26,10 @@ typedef struct {
 
 }parser_ctx;
 
-//void parser_set_arena(arena_t *a);
 bool parser_expect(parser_ctx *ctx, lexem_kind_t type);
+
+bool parser_is_type_token(parser_ctx *ctx);
+primitive_type_t parser_token_to_type(lexem_kind_t k);
 
 //Error handling
 parse_result parser_new_error(parser_ctx *ctx, const char *err, ...);

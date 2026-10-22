@@ -19,6 +19,46 @@ bool parser_expect(parser_ctx *ctx, lexem_kind_t type) {
   return lex.kind == type;
 }
 
+bool parser_is_type_token(parser_ctx *ctx) {
+  lexem_t lex = lexer_peek_token(ctx->l);
+
+  return lex.kind == LX_TYPE_CHAR    || lex.kind == LX_TYPE_UCHAR  ||
+         lex.kind == LX_TYPE_SHORT   || lex.kind == LX_TYPE_USHORT ||
+         lex.kind == LX_TYPE_INT     || lex.kind == LX_TYPE_UINT   ||
+         lex.kind == LX_TYPE_LONG    || lex.kind == LX_TYPE_ULONG  ||
+         lex.kind == LX_TYPE_LLONG   || lex.kind == LX_TYPE_ULLONG ||
+         lex.kind == LX_TYPE_FLOAT   || lex.kind == LX_TYPE_DOUBLE ||
+         lex.kind == LX_TYPE_LDOUBLE ||
+         lex.kind == LX_TYPE_BOOL    || lex.kind == LX_TYPE_VOID;
+}
+
+primitive_type_t parser_token_to_type(lexem_kind_t k)
+{
+  switch(k)
+  {
+  case LX_TYPE_CHAR: return T_CHAR;
+  case LX_TYPE_UCHAR: return T_UCHAR;
+  case LX_TYPE_SHORT: return T_SHORT;
+  case LX_TYPE_USHORT: return T_USHORT;
+  case LX_TYPE_INT: return T_INT;
+  case LX_TYPE_UINT: return T_UINT;
+  case LX_TYPE_LONG: return T_LONG;
+  case LX_TYPE_ULONG: return T_ULONG;
+  case LX_TYPE_LLONG: return T_LLONG;
+  case LX_TYPE_ULLONG: return T_ULLONG;
+  case LX_TYPE_FLOAT: return T_FLOAT;
+  case LX_TYPE_DOUBLE: return T_DOUBLE;
+  case LX_TYPE_LDOUBLE: return T_LDOUBLE;
+  case LX_TYPE_BOOL: return T_BOOL;
+  case LX_TYPE_VOID: return T_VOID;
+  default:
+    {
+      printf("[SHOULD NOT HAPPEN]\n");
+      return T_INT;
+    }
+  }
+}
+
 parse_result parse_integer(parser_ctx *ctx) {
   parse_result res;
   if (parser_expect(ctx, LX_INT)) {
@@ -145,12 +185,12 @@ parse_result parse_expr(parser_ctx *ctx) {
 }
 
 parse_result parse_type(parser_ctx *ctx) {
-  if (!parser_expect(ctx, LX_TYPE_INT)) {
+  if (!parser_is_type_token(ctx)) {
     return parser_new_error(ctx, "Need a typename for a type");
   }
   parse_result res;
-  lexer_consume_token(ctx->l);
-  type_t *t = type_new_primary(T_INT);
+  lexem_t type_token = lexer_consume_token(ctx->l);
+  type_t *t = type_new_primary(parser_token_to_type(type_token.kind));
   if (parser_expect(ctx, LX_LT)) {
     lexer_consume_token(ctx->l);
     parse_result bmin = parse_expr(ctx);
@@ -382,7 +422,7 @@ parse_result parse_statement(parser_ctx *ctx) {
   parse_result res;
   lexem_t tok = lexer_peek_token(ctx->l);
 
-  if (tok.kind == LX_TYPE_INT) {
+  if (parser_is_type_token(ctx)) {
     res = parse_declaration(ctx);
   } else if (tok.kind == LX_IF) {
     res = parse_if(ctx);
@@ -409,20 +449,22 @@ parse_result parse_func_def(parser_ctx *ctx) {
     return parser_new_error(ctx, "Need identifier after 'fn' or 'func'");
   lexem_t name = lexer_consume_token(ctx->l);
 
+  int old_table = ctx->current_table;
+  ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
   symbol_t sym = (symbol_t){.kind = SYM_FUNC,
                             .line_num = lexer_get_line(ctx->l),
-                            .char_num = lexer_get_char(ctx->l)
+                            .char_num = lexer_get_char(ctx->l),
+                            .info.child_table = ctx->current_table
                            };
+
   strcpy(sym.identifier, name.identifier);
 
   if (!parser_expect(ctx, LX_OPAR))
     return parser_new_error(ctx, "Need parenthesis to define a function");
   lexer_consume_token(ctx->l);
 
-  int old_table = ctx->current_table;
-  ctx->current_table = symbol_table_new(ctx->stl, ctx->current_table);
 
-  type_t* t = type_new_func();
+  type_t *t = type_new_func();
 
   while (!parser_expect(ctx, LX_CPAR)) {
     if (t->func.len > 0) {
@@ -433,7 +475,7 @@ parse_result parse_func_def(parser_ctx *ctx) {
     }
 
     parse_result type_arg = parse_type(ctx);
-    if (!type_arg.is_ok){
+    if (!type_arg.is_ok) {
       return type_arg;
     }
 

@@ -362,13 +362,16 @@ void _print_ast(anode_t *ast, stl_t* stl,  size_t depth) {
     printf("}");
     break;
   case FUNC_DEF:{
-    printf("func %s(", symbol_get_name(stl, ast->func_def.symbol));  
-    type_t* func_type = symbol_get_type(stl, ast->func_def.symbol);
-    fflush(stdout);
-    for(int i = 0; i < func_type->func.len; i++)
+    symbol_t sym = symbol_get(stl, ast->func_def.symbol);
+    printf("func %s(", sym.identifier);  
+    for(int i = 0; i < sym.type->func.len; i++)
     {
       type_print(stl->sts[ast->func_def.symbol.table].symbols[ast->func_def.symbol.idx].type->func.args[i]);
-      printf(",");
+      printf(" %s", symbol_get_name(stl, (sp_t){
+            .table = sym.info.child_table,
+            .idx = i
+      }));
+      if(i < sym.type->func.len - 1) printf(", ");
     }
     printf(") ");
     _print_ast(ast->func_def.stmt, stl, depth+1);
