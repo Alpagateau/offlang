@@ -1,4 +1,6 @@
 #include "types.h"
+#include <stdint.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,8 +22,8 @@ type_t *type_new_bounded(type_t *base, long long  min, long long max) {
   type_t *data = (type_t *)malloc(sizeof(type_t));
   data->kind = TYPE_BOUNDED;
   data->bounded.base = base;
-  data->bounded.min = min;
-  data->bounded.max = max;
+  data->bounded.range.smin = min;
+  data->bounded.range.smax = max;
   return data;
 }
 
@@ -54,8 +56,8 @@ type_t *type_copy(type_t *src) {
     break;
   case TYPE_BOUNDED:
     data->bounded.base = type_copy(src->bounded.base);
-    data->bounded.max = src->bounded.max;
-    data->bounded.min = src->bounded.min;
+    data->bounded.range.smax = src->bounded.range.smax;
+    data->bounded.range.smin = src->bounded.range.smin;
     break;
   case TYPE_POINTER:
     data->pointer.base = type_copy(src->pointer.base);
@@ -76,9 +78,9 @@ bool type_eq(type_t *a, type_t *b) {
   case TYPE_BOUNDED:
     if (!type_eq(a->bounded.base, b->bounded.base))
       return false;
-    if (a->bounded.max != b->bounded.max)
+    if (a->bounded.range.smax != b->bounded.range.smax)
       return false;
-    if (a->bounded.min != b->bounded.min)
+    if (a->bounded.range.smin != b->bounded.range.smin)
       return false;
   case TYPE_POINTER:
     return type_eq(a->pointer.base, b->pointer.base);
@@ -104,30 +106,110 @@ type_t* type_combine(type_t* a, type_t* b)
   return NULL;
 }
 
-bool _primary_type_is_sub(primitive_type_t a, primitive_type_t b)
+range_t type_to_range(type_t* t)
 {
-  if(a == b) return true;
-  if(a == T_LLONG)  return false;
-  if(a == T_ULLONG) return false;
-  if(b == T_UCHAR)  return false;
-  if(b == T_CHAR)   return false;
-
-  if(b == T_USHORT) return (a == T_UCHAR);
-  if(b == T_SHORT) return (a == T_CHAR) || (a == T_UCHAR);
-  if(b == T_UINT) return _primary_type_is_sub(a, T_USHORT);
-  if(b == T_INT) 
-    return _primary_type_is_sub(a, T_SHORT) 
-      || _primary_type_is_sub(a, T_USHORT);
-  if(b == T_ULONG) return _primary_type_is_sub(a, T_UINT);
-  if(b == T_LONG) 
-    return _primary_type_is_sub(a, T_INT) 
-      || _primary_type_is_sub(a, T_UINT);
-  if(b == T_ULLONG) return _primary_type_is_sub(a, T_ULONG);
-  if(b == T_LLONG) 
-    return _primary_type_is_sub(a, T_LONG) 
-      || _primary_type_is_sub(a, T_ULONG);
-
-  return false;
+  if(t->kind == TYPE_BOUNDED)
+  {
+    return t->bounded.range;
+  }
+  if(t->kind == TYPE_PRIMITIVE)
+  {
+    switch(t->prim_kind)
+    {
+      case T_CHAR:
+        return (range_t){
+          .positive = false,
+          .smax = CHAR_MAX,
+          .smin = CHAR_MIN
+        };
+      case T_UCHAR:
+        return (range_t){
+          .positive = true,
+          .umax = UCHAR_MAX,
+          .umin = 0
+        };
+      case T_SHORT:
+        return (range_t){
+          .positive = false,
+          .smax = SHRT_MAX,
+          .smin = SHRT_MIN
+        };
+      case T_USHORT:
+        return (range_t){
+          .positive = true,
+          .umax = USHRT_MAX,
+          .umin = 0
+        };
+      case T_INT:
+        return (range_t){
+          .positive = false,
+          .smax = INT_MAX,
+          .smin = INT_MIN
+        };
+      case T_UINT:
+        return (range_t){
+          .positive = true,
+          .umax = UINT_MAX,
+          .umin = 0
+        };
+      case T_LONG:
+        return (range_t){
+          .positive = false,
+          .smax = LONG_MAX,
+          .smin = LONG_MIN
+        };
+      case T_ULONG:
+        return (range_t){
+          .positive = true,
+          .umax = ULONG_MAX,
+          .umin = 0
+        };
+      case T_LLONG:
+        return (range_t){
+          .positive = false,
+          .smax = LONG_MAX,
+          .smin = LONG_MIN
+        };
+      case T_ULLONG:
+        return (range_t){
+          .positive = true,
+          .umax = ULONG_MAX,
+          .umin = 0
+        };
+      case T_FLOAT:
+        return (range_t){
+          .positive = false,
+          .smax = LONG_MAX,
+          .smin = LONG_MIN
+        }; 
+      case T_DOUBLE:
+        return (range_t){
+          .positive = false,
+          .smax = LONG_MAX,
+          .smin = LONG_MIN
+        };
+      case T_LDOUBLE:
+        return (range_t){
+          .positive = false,
+          .smax = LONG_MAX,
+          .smin = LONG_MIN
+        };
+      case T_BOOL:
+        return (range_t){
+          .positive = true,
+          .umin = 0,
+          .umax = 1
+        };
+      case T_VOID:
+        return (range_t){
+          .positive = true,
+          .umin = 0,
+          .umax = 0
+        };
+        break;
+      }
+  }
+  return (range_t){true, 0, 0};
 }
 
 // To do better
@@ -135,46 +217,28 @@ bool type_is_sub(type_t *src, type_t *dst) {
   if (type_eq(src, dst))
     return true;
 
-  if(src->kind == dst->kind)
+  if((src->kind == TYPE_PRIMITIVE || src->kind == TYPE_BOUNDED) &&
+      (dst->kind == TYPE_PRIMITIVE || dst->kind == TYPE_BOUNDED))
   {
-    if(src->kind == TYPE_PRIMITIVE)
-    {
-      return _primary_type_is_sub(
-          src->prim_kind, 
-          dst->prim_kind
-      );
-    }
-
-    if(src->kind == TYPE_POINTER)
-    {
-      return type_is_sub(
-          src->pointer.base, 
-          dst->pointer.base
-      );
-    }
-
-    if(src->kind == TYPE_BOUNDED)
-    {
-      return (src->bounded.min >= dst->bounded.min) 
-        && (src->bounded.max <= dst->bounded.max);
-    }
-
-    if(src->kind == TYPE_FUNC)
-    {
-      if(src->func.len != dst->func.len) return false;
-      for(int i = 0; i < src->func.len; i++)
-      {
-        if(!type_is_sub(
-              src->func.args[i], dst->func.args[i]
-        )) return false;
-      }
-      return type_is_sub(
-          src->func.ret_type, 
-          dst->func.ret_type
-      );
-    }
+    range_t r_src = type_to_range(src);
+    range_t r_dst = type_to_range(src);
+    return r_src.smin >= r_dst.smin && r_src.smax <= r_dst.smax;
   }
-
+  if(src->kind == TYPE_POINTER && dst->kind == TYPE_POINTER)
+  {
+    return type_is_sub(src->pointer.base, dst->pointer.base);
+  }
+  if(src->kind == TYPE_FUNC && dst->kind == TYPE_FUNC)
+  {
+    if(src->func.len != dst->func.len) return false;
+    if(!type_is_sub(src->func.ret_type, dst->func.ret_type)) return false;
+    for(int i = 0; i < src->func.len; i++)
+    {
+      if(!type_is_sub(src->func.args[i], dst->func.args[i]))
+        return false;
+    }
+    return true;
+  }
   return false;
 }
 
@@ -264,7 +328,9 @@ void type_print(type_t *t) {
     break;
   case TYPE_BOUNDED:
     type_print(t->bounded.base);
-    printf("<%lld, %lld>", t->bounded.min, t->bounded.max);
+    printf("<%lld, %lld>", 
+        t->bounded.range.smin, 
+        t->bounded.range.smax);
     break;
   case TYPE_POINTER:
     type_print(t->pointer.base);

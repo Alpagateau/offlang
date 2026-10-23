@@ -3,6 +3,15 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+
+typedef struct {
+  bool positive;
+  long long smax;
+  long long smin;
+  unsigned long long umax;
+  unsigned long long umin;
+} range_t;
+
 typedef enum {
   TYPE_PRIMITIVE,
   TYPE_BOUNDED,
@@ -42,8 +51,7 @@ typedef struct type_t {
     union {
       struct {
         struct type_t* base;
-        long long min;
-        long long max;
+        range_t range;
       } bounded;
 
       struct {
@@ -73,6 +81,7 @@ type_t* type_copy(type_t* src);
 bool type_eq(type_t* a, type_t* b);
 
 // returns true if src is a subtype of dst
+range_t type_to_range(type_t* t);
 bool type_is_sub(type_t* src, type_t* dst);
 type_t* type_combine(type_t* a, type_t* b);
 

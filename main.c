@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "symbol_table.h"
+#include "tmpc.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -34,6 +35,8 @@ int compile_per_file(FILE *file) {
 
   printf("arena : space taken : %zu\n", arena_get_taken(a));
 
+
+
   size_t err_len;
   error_t* errors = arena_get_errors(a, &err_len);
   for(size_t i = 0; i < err_len; i++)
@@ -41,6 +44,7 @@ int compile_per_file(FILE *file) {
     printf("[ERROR (%zu:%zu)] %s\n", errors[i].line_num, errors[i].char_num, errors[i].msg);
   }
   printf("Got %zu errors\n", err_len);
+  fcompile(&ctx, res.result);
 
   symbol_list_free(stl);
   arena_free(a);
@@ -50,6 +54,10 @@ int compile_per_file(FILE *file) {
 
 int main(int argc, char **argv) {
   printf("Hello from %s\n", argv[0]);
+  printf(
+      "For debugging purposes, the code is currently fully translated to C before any semantic analysis.\n"
+      "This is only to test things and shall not stay\n"
+      );
 
   if (argc >= 2) {
     for (int i = 1; i < argc; i++) {
