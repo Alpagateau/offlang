@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <stddef.h>
+#include <stdbool.h>
 typedef enum {
   TYPE_PRIMITIVE,
   TYPE_BOUNDED,
@@ -69,6 +70,10 @@ void type_func_add_arg(type_t* f, type_t* t);
 void type_func_set_ret(type_t* f, type_t* t);
 
 type_t* type_copy(type_t* src);
+bool type_eq(type_t* a, type_t* b);
+
+// returns true if src is a subtype of dst
+bool type_order(type_t* src, type_t* dst);
 
 void type_free(type_t* t);
 

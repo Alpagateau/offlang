@@ -71,7 +71,9 @@ anode_t *ast_new_compile_unit(arena_t *arena, list_t* lst);
 
 ast_type_t ast_get_type(anode_t* ast);
 
+//getter
 int  ast_get_ival(anode_t* ast);
+sp_t ast_get_symbol(anode_t* ast);
 
 void ast_set_pos(anode_t* ast, size_t l, size_t c);
 

@@ -196,6 +196,21 @@ int ast_get_ival(anode_t *ast) {
   return ast->ivar;
 }
 
+sp_t ast_get_symbol(anode_t* ast)
+{
+  switch(ast->type)
+  {
+    case VARIABLE:
+      return ast->symbol;
+    case DECLARATION:
+      return ast->declaration.symbol;
+    case FUNC_DEF:
+      return ast->func_def.symbol;
+    default:
+      return (sp_t){-1, -1};
+  }
+}
+
 anode_t *ast_get_lchild(anode_t *ast) {
   if (ast->type != BI_OP)
     return NULL;

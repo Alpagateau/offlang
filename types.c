@@ -77,6 +77,69 @@ type_t* type_copy(type_t* src)
   return data;
 }
 
+bool type_eq(type_t* a, type_t* b)
+{
+  if(a->kind != b->kind) return false;
+  switch(a->kind)
+  {
+    case TYPE_PRIMITIVE:
+      return a->prim_kind == b->prim_kind;
+    case TYPE_BOUNDED:
+      if(!type_eq(a->bounded.base, b->bounded.base))
+        return false;
+      if(a->bounded.max != b->bounded.max)
+        return false;
+      if(a->bounded.min != b->bounded.min)
+        return false;
+    case TYPE_POINTER:
+      return type_eq(a->pointer.base, b->pointer.base);
+    case TYPE_FUNC:
+      if(a->func.ret_type != b->func.ret_type) return false;
+      if(a->func.len != b->func.len) return false;
+      for(int i = 0; i < a->func.len; i++)
+      {
+        if(!type_eq(a->func.args[i], b->func.args[i])) 
+          return false;
+      }
+    default:
+      return false;
+  }
+  return true;
+}
+
+// To do better
+bool type_order(type_t* src, type_t* dst)
+{
+  if(type_eq(src, dst)) return true;
+  if(src->kind == TYPE_POINTER && dst->kind == TYPE_POINTER)
+    return type_order(src->pointer.base, dst->pointer.base);
+  if(src->kind == TYPE_BOUNDED)
+  {
+    if(dst->kind == TYPE_PRIMITIVE)
+      return type_eq(src->bounded.base, dst);
+    if(dst->kind == TYPE_BOUNDED)
+    {
+      return src->bounded.min >= dst->bounded.min 
+        &&   src->bounded.max <= dst->bounded.max;
+    }
+  }
+  if(src->kind == TYPE_FUNC && dst->kind == TYPE_FUNC)
+  {
+    if(!type_order(src->func.ret_type, dst->func.ret_type))
+      return false;
+
+    if(src->func.len != dst->func.len) return false;
+    for(int i = 0; i < src->func.len; i++)
+    {
+      if(!type_order(src->func.args[i], dst->func.args[i]))
+        return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
 void type_free(type_t* t)
 {
   if(t == NULL) return;

@@ -1,0 +1,9 @@
+#ifndef SEMANTIC_H
+#define SEMANTIC_H
+
+#include "types.h"
+#include "parser.h"
+
+type_t *analyse_node(parser_ctx *ctx, anode_t *node);
+
+#endif
