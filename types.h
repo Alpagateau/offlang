@@ -42,8 +42,8 @@ typedef struct type_t {
     union {
       struct {
         struct type_t* base;
-        int min;
-        int max;
+        long long min;
+        long long max;
       } bounded;
 
       struct {
@@ -64,7 +64,7 @@ typedef struct type_t {
 
 type_t* type_new_primary(primitive_type_t t);
 type_t* type_new_pointer(type_t* base);
-type_t* type_new_bounded(type_t* base, int min, int max);
+type_t* type_new_bounded(type_t* base, long long min, long long max);
 type_t* type_new_func();
 void type_func_add_arg(type_t* f, type_t* t);
 void type_func_set_ret(type_t* f, type_t* t);
@@ -73,7 +73,8 @@ type_t* type_copy(type_t* src);
 bool type_eq(type_t* a, type_t* b);
 
 // returns true if src is a subtype of dst
-bool type_order(type_t* src, type_t* dst);
+bool type_is_sub(type_t* src, type_t* dst);
+type_t* type_combine(type_t* a, type_t* b);
 
 void type_free(type_t* t);
 

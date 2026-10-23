@@ -455,7 +455,8 @@ void _print_ast(anode_t *ast, stl_t *stl, size_t depth) {
       if (i < sym.type->func.len - 1)
         printf(", ");
     }
-    printf(") ");
+    printf(") : ");
+    type_print(sym.type->func.ret_type);
     _print_ast(ast->func_def.stmt, stl, depth + 1);
     break;
   }

@@ -74,11 +74,12 @@ ast_type_t ast_get_type(anode_t* ast);
 //getter
 int  ast_get_ival(anode_t* ast);
 sp_t ast_get_symbol(anode_t* ast);
+anode_t* ast_get_lchild(anode_t* ast);
+anode_t* ast_get_rchild(anode_t* ast);
+ast_op_t ast_get_op(anode_t *ast);
 
 void ast_set_pos(anode_t* ast, size_t l, size_t c);
 
-anode_t* ast_get_lchild(anode_t* ast);
-anode_t* ast_get_rchild(anode_t* ast);
 
 anode_t* ast_simplify_expr(arena_t* arena, anode_t* ast);
 
