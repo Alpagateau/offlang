@@ -37,8 +37,11 @@ typedef enum {
   RETURN,
   BLOCK,
   
-  //Top Level
+  // Top Level
   FUNC_DEF,
+
+  // Final product ^^
+  COMPILE_UNIT
 } ast_type_t;
 
 typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } ast_op_t;
@@ -61,7 +64,10 @@ anode_t *ast_new_while_loop(arena_t *arena, anode_t* cond, anode_t *then);
 anode_t *ast_new_defer(arena_t *arena, anode_t *stmt);
 anode_t *ast_new_return(arena_t *arena, anode_t *ret);
 anode_t *ast_new_block(arena_t *arena, list_t* lst);
+
 anode_t *ast_new_func_def(arena_t *arena, sp_t sp, anode_t* stmt);
+
+anode_t *ast_new_compile_unit(arena_t *arena, list_t* lst);
 
 ast_type_t ast_get_type(anode_t* ast);
 

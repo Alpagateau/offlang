@@ -1,6 +1,11 @@
+func some() : int
+{
+  return 3;
+}
+
 func main(int argc, char^^ argv) : int
 {
-  int somevar = 3 + argc;
+  int somevar = 3 + argc[4](4+5, 8 - main(9));
   defer while 3 {
     int hello = 3;
     ullong^^ _some_kind_of_var;

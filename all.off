@@ -95,6 +95,12 @@ local int counter; // local tells the compiler that a global variable is only ac
 fn(int, int<3, 9>) some; // a function "pointer"
 fn(double, int<3, 9>) : float some_other;
 
+//a function pointer pointer is of the form
+fn^(int, int) : float some_other_other;
+
+//or a list
+fn[10](int, int) : float function_array;
+
 //Functions
 fn some_func() : void {
 }

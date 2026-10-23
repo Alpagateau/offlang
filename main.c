@@ -24,7 +24,7 @@ int compile_per_file(FILE *file) {
   };
 
   lexer_init(file, &lexer);
-  parse_result res = parse_func_def(&ctx);
+  parse_result res = parse_compile_unit(&ctx);
   if (res.is_ok) {
     print_ast(res.result, ctx.stl);
     printf("\n");

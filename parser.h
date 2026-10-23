@@ -59,4 +59,7 @@ parse_result parse_statement(parser_ctx *ctx);
 // Func definition
 parse_result parse_func_def(parser_ctx *ctx);
 
+//Compile unit
+parse_result parse_compile_unit(parser_ctx *ctx);
+
 #endif

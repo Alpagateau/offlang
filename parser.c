@@ -36,22 +36,22 @@ primitive_type_t parser_token_to_type(lexem_kind_t k)
 {
   switch(k)
   {
-  case LX_TYPE_CHAR: return T_CHAR;
-  case LX_TYPE_UCHAR: return T_UCHAR;
-  case LX_TYPE_SHORT: return T_SHORT;
-  case LX_TYPE_USHORT: return T_USHORT;
-  case LX_TYPE_INT: return T_INT;
-  case LX_TYPE_UINT: return T_UINT;
-  case LX_TYPE_LONG: return T_LONG;
-  case LX_TYPE_ULONG: return T_ULONG;
-  case LX_TYPE_LLONG: return T_LLONG;
-  case LX_TYPE_ULLONG: return T_ULLONG;
-  case LX_TYPE_FLOAT: return T_FLOAT;
-  case LX_TYPE_DOUBLE: return T_DOUBLE;
-  case LX_TYPE_LDOUBLE: return T_LDOUBLE;
-  case LX_TYPE_BOOL: return T_BOOL;
-  case LX_TYPE_VOID: return T_VOID;
-  default:
+    case LX_TYPE_CHAR: return T_CHAR;
+    case LX_TYPE_UCHAR: return T_UCHAR;
+    case LX_TYPE_SHORT: return T_SHORT;
+    case LX_TYPE_USHORT: return T_USHORT;
+    case LX_TYPE_INT: return T_INT;
+    case LX_TYPE_UINT: return T_UINT;
+    case LX_TYPE_LONG: return T_LONG;
+    case LX_TYPE_ULONG: return T_ULONG;
+    case LX_TYPE_LLONG: return T_LLONG;
+    case LX_TYPE_ULLONG: return T_ULLONG;
+    case LX_TYPE_FLOAT: return T_FLOAT;
+    case LX_TYPE_DOUBLE: return T_DOUBLE;
+    case LX_TYPE_LDOUBLE: return T_LDOUBLE;
+    case LX_TYPE_BOOL: return T_BOOL;
+    case LX_TYPE_VOID: return T_VOID;
+    default:
     {
       printf("[SHOULD NOT HAPPEN]\n");
       return T_INT;
@@ -133,6 +133,49 @@ parse_result parse_bi_op_factor(parser_ctx *ctx) {
   } else {
     res = parser_new_error(ctx, "Could not parse factor");
   }
+
+  while(parser_expect(ctx, LX_OPAR) || parser_expect(ctx, LX_OSQR_BRA))
+  {
+    if(parser_expect(ctx, LX_OSQR_BRA))
+    {
+      // indexing
+      lexer_consume_token(ctx->l);
+      parse_result index = parse_expr(ctx);
+      if(!index.is_ok)
+        return index;
+      res.result = ast_new_index(ctx->a, res.result, index.result);
+      if(!parser_expect(ctx, LX_CSQR_BRA))
+        return parser_new_error(ctx, "Need a ']' to close an index");
+      lexer_consume_token(ctx->l);
+      continue;
+    }
+    if(parser_expect(ctx, LX_OPAR))
+    {
+      lexer_consume_token(ctx->l);
+      list_t* lst = list_new(ctx->a);
+      
+      while(!parser_expect(ctx, LX_CPAR))
+      {
+        parse_result expr = parse_expr(ctx);
+        if(!expr.is_ok)
+          return expr;
+        list_append(lst, expr.result);
+        if(!parser_expect(ctx, LX_CPAR))
+        {
+          if(!parser_expect(ctx, LX_COMMA))
+            return parser_new_error(ctx, "Missing comma");
+          lexer_consume_token(ctx->l);
+        }
+        else
+        {
+          break;
+        }
+      }
+      lexer_consume_token(ctx->l);
+      res.result = ast_new_fcall(ctx->a, res.result, lst);
+    }
+  }
+
   return res;
 }
 
@@ -519,5 +562,21 @@ parse_result parse_func_def(parser_ctx *ctx) {
   parse_result res;
   res.is_ok = true;
   res.result = ast_new_func_def(ctx->a, s, stmt.result);
+  return res;
+}
+
+parse_result parse_compile_unit(parser_ctx *ctx)
+{
+  list_t *lst = list_new(ctx->a);
+  while(parser_expect(ctx, LX_FUNC))
+  {
+    parse_result f = parse_func_def(ctx);
+    if(!f.is_ok)
+      return f;
+    list_append(lst, f.result);
+  }
+  parse_result res;
+  res.is_ok = true;
+  res.result = ast_new_compile_unit(ctx->a, lst);
   return res;
 }

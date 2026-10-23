@@ -46,7 +46,6 @@ void type_func_add_arg(type_t* f, type_t* t)
   }
 
   f->func.args[f->func.len++] = t;
-  printf("F #args : %zu\n", f->func.len);
 }
 
 void type_func_set_ret(type_t* f, type_t* t)
