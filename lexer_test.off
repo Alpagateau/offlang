@@ -1,6 +1,7 @@
+# This is a test
 func some() : int
 {
-  return 3;
+  return #this is an inline comment# 3;
 }
 
 func main(int argc, char^^ argv) : int

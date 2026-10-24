@@ -3,7 +3,7 @@ LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall
 
-.PHONY: default all clean
+.PHONY: default all clean format
 
 default: $(TARGET)
 all: default
@@ -22,3 +22,6 @@ $(TARGET): $(OBJECTS)
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
+
+format:
+	clang-format -i *.c *.h

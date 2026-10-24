@@ -13,160 +13,160 @@ struct list_node_t;
 typedef struct list_node_t list_node_t;
 
 typedef struct {
-  list_node_t* first; 
-  list_node_t* last;
-  size_t len;
-  arena_t* arena;
+    list_node_t* first;
+    list_node_t* last;
+    size_t len;
+    arena_t* arena;
 } list_t;
 
-typedef enum { 
-  //Expr
-  INT_LIT, 
-  VARIABLE, 
-  BI_OP,
-  UN_OP,
-  INDEXING,
-  CALLING,
-  
-  //Statements
-  DECLARATION,
-  ASSIGNMENT,
-  IF_BRANCH,
-  WHILE_LOOP,
-  DEFER,
-  RETURN,
-  BLOCK,
-  
-  // Top Level
-  FUNC_DEF,
+typedef enum {
+    // Expr
+    INT_LIT,
+    VARIABLE,
+    BI_OP,
+    UN_OP,
+    INDEXING,
+    CALLING,
 
-  // Final product ^^
-  COMPILE_UNIT
+    // Statements
+    DECLARATION,
+    ASSIGNMENT,
+    IF_BRANCH,
+    WHILE_LOOP,
+    DEFER,
+    RETURN,
+    BLOCK,
+
+    // Top Level
+    FUNC_DEF,
+
+    // Final product ^^
+    COMPILE_UNIT
 } ast_type_t;
 
 typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } ast_op_t;
 
 struct ast_node {
-  ast_type_t type;
-  size_t line_num;
-  size_t char_num;
+    ast_type_t type;
+    size_t line_num;
+    size_t char_num;
 
-  union {
-    int ivar;
-    sp_t symbol;
-    type_t *type_val;
+    union {
+        int ivar;
+        sp_t symbol;
+        type_t* type_val;
 
-    struct {
-      anode_t *lchild;
-      anode_t *rchild;
-      ast_op_t op;
-    } binary;
+        struct {
+            anode_t* lchild;
+            anode_t* rchild;
+            ast_op_t op;
+        } binary;
 
-    struct {
-      anode_t *child;
-      ast_op_t op;
-    } unary;
+        struct {
+            anode_t* child;
+            ast_op_t op;
+        } unary;
 
-    struct {
-      anode_t *expr;
-      sp_t symbol;
-    } declaration;
+        struct {
+            anode_t* expr;
+            sp_t symbol;
+        } declaration;
 
-    struct {
-      anode_t *lval;
-      anode_t *expr;
-    } assignment;
+        struct {
+            anode_t* lval;
+            anode_t* expr;
+        } assignment;
 
-    struct {
-      anode_t *cond;
-      anode_t *then;
-      anode_t *otherwise;
-    } if_branch;
+        struct {
+            anode_t* cond;
+            anode_t* then;
+            anode_t* otherwise;
+        } if_branch;
 
-    struct {
-      anode_t *cond;
-      anode_t *then;
-    } while_loop;
+        struct {
+            anode_t* cond;
+            anode_t* then;
+        } while_loop;
 
-    struct {
-      anode_t *stmt;
-    } defer;
+        struct {
+            anode_t* stmt;
+        } defer;
 
-    struct {
-      anode_t *expr;
-    } ret;
+        struct {
+            anode_t* expr;
+        } ret;
 
-    struct {
-      list_t *stmts;
-    } block;
+        struct {
+            list_t* stmts;
+        } block;
 
-    struct {
-      sp_t symbol;
-      anode_t *stmt;
-    } func_def;
+        struct {
+            sp_t symbol;
+            anode_t* stmt;
+        } func_def;
 
-    struct {
-      anode_t *array;
-      anode_t *index;
-    } indexed;
+        struct {
+            anode_t* array;
+            anode_t* index;
+        } indexed;
 
-    struct {
-      anode_t *func;
-      list_t *args;
-    } fcall;
+        struct {
+            anode_t* func;
+            list_t* args;
+        } fcall;
 
-    struct {
-      list_t *top_levels;
-    } compile_unit;
-  };
+        struct {
+            list_t* top_levels;
+        } compile_unit;
+    };
 };
 
-anode_t *ast_new(arena_t *arena, ast_type_t type);
+anode_t* ast_new (arena_t* arena, ast_type_t type);
 
-anode_t *ast_new_int(arena_t *arena, int value);
-anode_t *ast_new_var(arena_t *arena, sp_t symbol);
-anode_t *ast_new_binary(arena_t *arena, ast_op_t op, anode_t *lc, anode_t *rc);
-anode_t *ast_new_unary(arena_t *arena, ast_op_t op, anode_t *child);
-anode_t *ast_new_index(arena_t *arena, anode_t *expr  , anode_t *idx);
-anode_t *ast_new_fcall(arena_t *arena, anode_t *callee, list_t *args);
+anode_t* ast_new_int (arena_t* arena, int value);
+anode_t* ast_new_var (arena_t* arena, sp_t symbol);
+anode_t* ast_new_binary (arena_t* arena, ast_op_t op, anode_t* lc, anode_t* rc);
+anode_t* ast_new_unary (arena_t* arena, ast_op_t op, anode_t* child);
+anode_t* ast_new_index (arena_t* arena, anode_t* expr, anode_t* idx);
+anode_t* ast_new_fcall (arena_t* arena, anode_t* callee, list_t* args);
 
-//anode_t *ast_new_type(arena_t *arena, type_t* type);
+// anode_t *ast_new_type(arena_t *arena, type_t* type);
 
-anode_t *ast_new_declaration(arena_t *arena, sp_t symbol, anode_t* expr);
-anode_t *ast_new_assigment(arena_t *arena, anode_t* lv, anode_t* expr);
-anode_t *ast_new_if_branch(arena_t *arena, anode_t* cond, anode_t *then, anode_t *otherwise);
-anode_t *ast_new_while_loop(arena_t *arena, anode_t* cond, anode_t *then);
-anode_t *ast_new_defer(arena_t *arena, anode_t *stmt);
-anode_t *ast_new_return(arena_t *arena, anode_t *ret);
-anode_t *ast_new_block(arena_t *arena, list_t* lst);
+anode_t* ast_new_declaration (arena_t* arena, sp_t symbol, anode_t* expr);
+anode_t* ast_new_assigment (arena_t* arena, anode_t* lv, anode_t* expr);
+anode_t* ast_new_if_branch (arena_t* arena, anode_t* cond, anode_t* then, anode_t* otherwise);
+anode_t* ast_new_while_loop (arena_t* arena, anode_t* cond, anode_t* then);
+anode_t* ast_new_defer (arena_t* arena, anode_t* stmt);
+anode_t* ast_new_return (arena_t* arena, anode_t* ret);
+anode_t* ast_new_block (arena_t* arena, list_t* lst);
 
-anode_t *ast_new_func_def(arena_t *arena, sp_t sp, anode_t* stmt);
+anode_t* ast_new_func_def (arena_t* arena, sp_t sp, anode_t* stmt);
 
-anode_t *ast_new_compile_unit(arena_t *arena, list_t* lst);
+anode_t* ast_new_compile_unit (arena_t* arena, list_t* lst);
 
-ast_type_t ast_get_type(anode_t* ast);
+ast_type_t ast_get_type (anode_t* ast);
 
-//getter
-int  ast_get_ival(anode_t* ast);
-sp_t ast_get_symbol(anode_t* ast);
-anode_t* ast_get_lchild(anode_t* ast);
-anode_t* ast_get_rchild(anode_t* ast);
-ast_op_t ast_get_op(anode_t *ast);
+// getter
+int ast_get_ival (anode_t* ast);
+sp_t ast_get_symbol (anode_t* ast);
+anode_t* ast_get_lchild (anode_t* ast);
+anode_t* ast_get_rchild (anode_t* ast);
+ast_op_t ast_get_op (anode_t* ast);
 
-void ast_set_pos(anode_t* ast, size_t l, size_t c);
+void ast_set_pos (anode_t* ast, size_t l, size_t c);
 
 
-anode_t* ast_simplify_expr(arena_t* arena, anode_t* ast);
+anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast);
 
-void print_ast(anode_t* ast, stl_t* stl);
+void print_ast (anode_t* ast, stl_t* stl);
 
 // LISTS
-list_t* list_new(arena_t* arena);
+list_t* list_new (arena_t* arena);
 
-void list_append(list_t* l, anode_t* node);
-void list_insert_at(list_t* l, anode_t* node, size_t idx);
-void list_remove_at(list_t* l, size_t idx);
+void list_append (list_t* l, anode_t* node);
+void list_insert_at (list_t* l, anode_t* node, size_t idx);
+void list_remove_at (list_t* l, size_t idx);
 
-anode_t* list_get_at(list_t* l, size_t idx);
+anode_t* list_get_at (list_t* l, size_t idx);
 
 #endif

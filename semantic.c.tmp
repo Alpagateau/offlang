@@ -1,0 +1,33 @@
+#include "semantic.h"
+#include "ast.h"
+#include "symbol_table.h"
+#include "types.h"
+
+type_t *analyse_node(parser_ctx *ctx, anode_t *node)
+{
+  if(node == NULL) return NULL;
+
+  switch(node->type)
+  {
+    case INT_LIT:
+      return type_new_bounded(
+          type_new_primary(T_INT), node->ivar, node->ivar
+          );
+    case VARIABLE:
+      return symbol_get_type(ctx->stl, node->symbol);
+    case BI_OP:
+    case UN_OP:
+    case INDEXING:
+    case CALLING:
+    case DECLARATION:
+    case ASSIGNMENT:
+    case IF_BRANCH:
+    case WHILE_LOOP:
+    case DEFER:
+    case RETURN:
+    case BLOCK:
+    case FUNC_DEF:
+    case COMPILE_UNIT:
+    break;
+  }
+}
