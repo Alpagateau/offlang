@@ -81,13 +81,11 @@ bool lexer_is_operator (int c) {
 void lexer_consume_spaces (lexer_t* l) {
     int c = lexer_peek (l);
     while (isspace (c) || l->in_comment || c == '#') {
-        if(c == '\n' && l->in_comment)
-        {
-          l->in_comment = false;
+        if (c == '\n' && l->in_comment) {
+            l->in_comment = false;
         }
-        if(c == '#')
-        {
-          l->in_comment = !l->in_comment;
+        if (c == '#') {
+            l->in_comment = !l->in_comment;
         }
         lexer_consume (l);
         c = lexer_peek (l);
@@ -236,13 +234,9 @@ void lexer_throw_till_break (lexer_t* l) {
     lexer_consume_token (l);
 }
 
-size_t lexer_get_line (lexer_t* l) {
-    return lexer_peek_token (l).line_num;
-}
+size_t lexer_get_line (lexer_t* l) { return lexer_peek_token (l).line_num; }
 
-size_t lexer_get_char (lexer_t* l) {
-    return lexer_peek_token (l).char_num;
-}
+size_t lexer_get_char (lexer_t* l) { return lexer_peek_token (l).char_num; }
 
 void lexer_print_lexem (lexem_t lexem) {
     printf ("<(%zu:%zu) ", lexem.line_num, lexem.char_num);
@@ -267,13 +261,10 @@ void lexer_emit_error (const char* err, size_t line_num, size_t char_num) {
     printf ("[LEXER ERROR] (%ld:%ld) %s\n", line_num, char_num, err);
 }
 
-lexem_t lexer_peek_token (lexer_t* l) {
-    return l->next_lexems[l->next_idx];
-}
+lexem_t lexer_peek_token (lexer_t* l) { return l->next_lexems[l->next_idx]; }
 
 lexem_t lexer_peek_at (lexer_t* l, size_t idx) {
-    if (idx >= LEXER_BUFFER_SIZE)
-        return (lexem_t){ .kind = LX_ERR };
+    if (idx >= LEXER_BUFFER_SIZE) return (lexem_t){ .kind = LX_ERR };
     return l->next_lexems[(l->next_idx + idx) % LEXER_BUFFER_SIZE];
 }
 

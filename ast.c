@@ -4,6 +4,83 @@
 #include <stdio.h>
 #include <string.h>
 
+struct ast_node {
+    ast_type_t type;
+    size_t start_line_num;
+    size_t start_char_num;
+
+    size_t end_line_num;
+    size_t end_char_num;
+
+    union {
+        int ivar;
+        sp_t symbol;
+        type_t* type_val;
+
+        struct {
+            anode_t* lchild;
+            anode_t* rchild;
+            ast_op_t op;
+        } binary;
+
+        struct {
+            anode_t* child;
+            ast_op_t op;
+        } unary;
+
+        struct {
+            anode_t* expr;
+            sp_t symbol;
+        } declaration;
+
+        struct {
+            anode_t* lval;
+            anode_t* expr;
+        } assignment;
+
+        struct {
+            anode_t* cond;
+            anode_t* then;
+            anode_t* otherwise;
+        } if_branch;
+
+        struct {
+            anode_t* cond;
+            anode_t* then;
+        } while_loop;
+
+        struct {
+            anode_t* stmt;
+        } defer;
+
+        struct {
+            anode_t* expr;
+        } ret;
+
+        struct {
+            list_t* stmts;
+        } block;
+
+        struct {
+            sp_t symbol;
+            anode_t* stmt;
+        } func_def;
+
+        struct {
+            anode_t* array;
+            anode_t* index;
+        } indexed;
+
+        struct {
+            anode_t* func;
+            list_t* args;
+        } fcall;
+
+        struct {
+            list_t* top_levels;
+        } compile_unit;
+    };
+};
 
 anode_t* ast_new (arena_t* arena, ast_type_t type) {
     anode_t* a = (anode_t*)arena_alloc (arena, sizeof (anode_t));
@@ -112,13 +189,10 @@ anode_t* ast_new_compile_unit (arena_t* arena, list_t* lst) {
     return n;
 }
 
-ast_type_t ast_get_type (anode_t* ast) {
-    return ast->type;
-}
+ast_type_t ast_get_type (anode_t* ast) { return ast->type; }
 
 int ast_get_ival (anode_t* ast) {
-    if (ast->type != INT_LIT)
-        return 0;
+    if (ast->type != INT_LIT) return 0;
     return ast->ivar;
 }
 
@@ -132,14 +206,12 @@ sp_t ast_get_symbol (anode_t* ast) {
 }
 
 anode_t* ast_get_lchild (anode_t* ast) {
-    if (ast->type != BI_OP)
-        return NULL;
+    if (ast->type != BI_OP) return NULL;
     return ast->binary.lchild;
 }
 
 anode_t* ast_get_rchild (anode_t* ast) {
-    if (ast->type != BI_OP)
-        return NULL;
+    if (ast->type != BI_OP) return NULL;
     return ast->binary.rchild;
 }
 
@@ -280,8 +352,7 @@ void _print_ast (anode_t* ast, stl_t* stl, size_t depth) {
         printf ("(");
         for (int i = 0; i < ast->fcall.args->len; i++) {
             _print_ast (list_get_at (ast->fcall.args, i), stl, depth);
-            if (i < ast->fcall.args->len - 1)
-                printf (",");
+            if (i < ast->fcall.args->len - 1) printf (",");
         }
         printf (")");
         break;
@@ -347,8 +418,7 @@ void _print_ast (anode_t* ast, stl_t* stl, size_t depth) {
             .type->func.args[i]);
             printf (" %s",
             symbol_get_name (stl, (sp_t){ .table = sym.info.child_table, .idx = i }));
-            if (i < sym.type->func.len - 1)
-                printf (", ");
+            if (i < sym.type->func.len - 1) printf (", ");
         }
         printf (") : ");
         type_print (sym.type->func.ret_type);
@@ -369,7 +439,9 @@ void print_ast (anode_t* ast, stl_t* stl) {
     _print_ast (ast, stl, 1);
 }
 
-void ast_set_pos (anode_t* ast, size_t l, size_t c) {
-    ast->char_num = c;
-    ast->line_num = l;
+void ast_set_pos (anode_t* ast, size_t sl, size_t sc, size_t el, size_t ec) {
+    ast->start_char_num = sc;
+    ast->start_line_num = sl;
+    ast->end_char_num = ec;
+    ast->end_line_num = el;
 }

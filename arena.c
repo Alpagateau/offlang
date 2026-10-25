@@ -37,9 +37,7 @@ void* arena_alloc (arena_t* arena, size_t size) {
     return ptr;
 }
 
-size_t arena_get_taken (arena_t* arena) {
-    return arena->cursor;
-}
+size_t arena_get_taken (arena_t* arena) { return arena->cursor; }
 
 void arena_new_err (arena_t* arena, error_t err) {
     if (arena->err_len + 1 >= arena->err_cap) {
@@ -51,8 +49,7 @@ void arena_new_err (arena_t* arena, error_t err) {
 }
 
 error_t* arena_get_errors (arena_t* arena, size_t* len) {
-    if (len != NULL)
-        *len = arena->err_len;
+    if (len != NULL) *len = arena->err_len;
     return arena->errors;
 }
 

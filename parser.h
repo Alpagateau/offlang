@@ -27,6 +27,7 @@ typedef struct {
 } parser_ctx;
 
 bool parser_expect (parser_ctx* ctx, lexem_kind_t type);
+lexem_t parser_consume(parser_ctx* ctx, lexem_kind_t k);
 
 bool parser_is_type_token (parser_ctx* ctx);
 primitive_type_t parser_token_to_type (lexem_kind_t k);

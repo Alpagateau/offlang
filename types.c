@@ -45,9 +45,7 @@ void type_func_add_arg (type_t* f, type_t* t) {
     f->func.args[f->func.len++] = t;
 }
 
-void type_func_set_ret (type_t* f, type_t* t) {
-    f->func.ret_type = t;
-}
+void type_func_set_ret (type_t* f, type_t* t) { f->func.ret_type = t; }
 
 type_t* type_copy (type_t* src) {
     type_t* data = (type_t*)malloc (sizeof (type_t));
@@ -63,43 +61,36 @@ type_t* type_copy (type_t* src) {
         data->pointer.base = type_copy (src->pointer.base);
         break;
     case TYPE_FUNC:
-        data->func.len = src->func.len; 
+        data->func.len      = src->func.len;
         data->func.capacity = src->func.len;
-        data->func.args = malloc(sizeof(type_t*) * src->func.len);
-        for(int i = 0; i < data->func.len; i++)
-        {
-          data->func.args[i] = type_copy(src->func.args[i]);
+        data->func.args     = malloc (sizeof (type_t*) * src->func.len);
+        for (int i = 0; i < data->func.len; i++) {
+            data->func.args[i] = type_copy (src->func.args[i]);
         }
-    default: 
-        free(data);
-        printf ("[SHOULD NOT HAPPEN]"); break;
+    default:
+        free (data);
+        printf ("[SHOULD NOT HAPPEN]");
+        break;
         return NULL;
     }
     return data;
 }
 
 bool type_eq (type_t* a, type_t* b) {
-    if (a->kind != b->kind)
-        return false;
+    if (a->kind != b->kind) return false;
     switch (a->kind) {
     case TYPE_PRIMITIVE: return a->prim_kind == b->prim_kind;
     case TYPE_BOUNDED:
-        if (!type_eq (a->bounded.base, b->bounded.base))
-            return false;
-        if (a->bounded.range.smax != b->bounded.range.smax)
-            return false;
-        if (a->bounded.range.smin != b->bounded.range.smin)
-            return false;
+        if (!type_eq (a->bounded.base, b->bounded.base)) return false;
+        if (a->bounded.range.smax != b->bounded.range.smax) return false;
+        if (a->bounded.range.smin != b->bounded.range.smin) return false;
         break;
     case TYPE_POINTER: return type_eq (a->pointer.base, b->pointer.base);
     case TYPE_FUNC:
-        if (!type_eq(a->func.ret_type, b->func.ret_type))
-            return false;
-        if (a->func.len != b->func.len)
-            return false;
+        if (!type_eq (a->func.ret_type, b->func.ret_type)) return false;
+        if (a->func.len != b->func.len) return false;
         for (int i = 0; i < a->func.len; i++) {
-            if (!type_eq (a->func.args[i], b->func.args[i]))
-                return false;
+            if (!type_eq (a->func.args[i], b->func.args[i])) return false;
         }
         break;
     default: return false;
@@ -121,11 +112,9 @@ bool type_is_valid (type_t* t) {
     }
     case TYPE_NAMED: return false;
     case TYPE_FUNC: {
-        if (!type_is_valid (t->func.ret_type))
-            return false;
+        if (!type_is_valid (t->func.ret_type)) return false;
         for (int i = 0; i < t->func.len; i++) {
-            if (!type_is_valid (t->func.args[i]))
-                return false;
+            if (!type_is_valid (t->func.args[i])) return false;
         }
         return true;
     }
@@ -176,8 +165,7 @@ range_t type_to_range (type_t* t) {
 
 // To do better
 bool type_is_sub (type_t* src, type_t* dst) {
-    if (type_eq (src, dst))
-        return true;
+    if (type_eq (src, dst)) return true;
 
     if ((src->kind == TYPE_PRIMITIVE || src->kind == TYPE_BOUNDED) &&
         (dst->kind == TYPE_PRIMITIVE || dst->kind == TYPE_BOUNDED)) {
@@ -189,10 +177,8 @@ bool type_is_sub (type_t* src, type_t* dst) {
         return type_is_sub (src->pointer.base, dst->pointer.base);
     }
     if (src->kind == TYPE_FUNC && dst->kind == TYPE_FUNC) {
-        if (src->func.len != dst->func.len)
-            return false;
-        if (!type_is_sub (src->func.ret_type, dst->func.ret_type))
-            return false;
+        if (src->func.len != dst->func.len) return false;
+        if (!type_is_sub (src->func.ret_type, dst->func.ret_type)) return false;
         for (int i = 0; i < src->func.len; i++) {
             if (!type_is_sub (src->func.args[i], dst->func.args[i]))
                 return false;
@@ -212,8 +198,7 @@ bool type_is_sub (type_t* src, type_t* dst) {
 // }
 
 void type_free (type_t* t) {
-    if (t == NULL)
-        return;
+    if (t == NULL) return;
     switch (t->kind) {
     case TYPE_BOUNDED: type_free (t->bounded.base); break;
     case TYPE_POINTER: type_free (t->pointer.base); break;

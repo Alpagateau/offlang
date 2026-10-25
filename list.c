@@ -24,8 +24,7 @@ list_t* list_new (arena_t* arena) {
 }
 
 void list_append (list_t* l, anode_t* node) {
-    if (l == NULL)
-        return;
+    if (l == NULL) return;
     list_node_t* n = new_list_node (node, l->arena);
     if (l->len == 0) {
         l->first = n;
@@ -84,8 +83,7 @@ void list_remove_at (list_t* l, size_t idx) {
 }
 
 anode_t* list_get_at (list_t* l, size_t idx) {
-    if (idx >= l->len)
-        return NULL;
+    if (idx >= l->len) return NULL;
     list_node_t* n = l->first;
 
     // printf("[LIST LOG] l of len %zu. First : %p; Last : %p\n", l->len, l->first, l->last);

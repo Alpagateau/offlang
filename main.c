@@ -3,7 +3,6 @@
 #include "lexer.h"
 #include "parser.h"
 #include "symbol_table.h"
-#include "tmpc.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,7 +40,6 @@ int compile_per_file (FILE* file) {
         errors[i].msg);
     }
     printf ("Got %zu errors\n", err_len);
-    fcompile (&ctx, res.result);
 
     symbol_list_free (stl);
     arena_free (a);

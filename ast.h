@@ -46,80 +46,6 @@ typedef enum {
 
 typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } ast_op_t;
 
-struct ast_node {
-    ast_type_t type;
-    size_t line_num;
-    size_t char_num;
-
-    union {
-        int ivar;
-        sp_t symbol;
-        type_t* type_val;
-
-        struct {
-            anode_t* lchild;
-            anode_t* rchild;
-            ast_op_t op;
-        } binary;
-
-        struct {
-            anode_t* child;
-            ast_op_t op;
-        } unary;
-
-        struct {
-            anode_t* expr;
-            sp_t symbol;
-        } declaration;
-
-        struct {
-            anode_t* lval;
-            anode_t* expr;
-        } assignment;
-
-        struct {
-            anode_t* cond;
-            anode_t* then;
-            anode_t* otherwise;
-        } if_branch;
-
-        struct {
-            anode_t* cond;
-            anode_t* then;
-        } while_loop;
-
-        struct {
-            anode_t* stmt;
-        } defer;
-
-        struct {
-            anode_t* expr;
-        } ret;
-
-        struct {
-            list_t* stmts;
-        } block;
-
-        struct {
-            sp_t symbol;
-            anode_t* stmt;
-        } func_def;
-
-        struct {
-            anode_t* array;
-            anode_t* index;
-        } indexed;
-
-        struct {
-            anode_t* func;
-            list_t* args;
-        } fcall;
-
-        struct {
-            list_t* top_levels;
-        } compile_unit;
-    };
-};
 
 anode_t* ast_new (arena_t* arena, ast_type_t type);
 
@@ -153,8 +79,9 @@ anode_t* ast_get_lchild (anode_t* ast);
 anode_t* ast_get_rchild (anode_t* ast);
 ast_op_t ast_get_op (anode_t* ast);
 
-void ast_set_pos (anode_t* ast, size_t l, size_t c);
-
+void ast_set_pos (
+    anode_t* ast, 
+    size_t sl, size_t sc, size_t el, size_t ec);
 
 anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast);
 

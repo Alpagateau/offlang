@@ -16,8 +16,7 @@ int symbol_table_new (stl_t* list, int prev) {
 }
 
 sp_t search_symbol (stl_t* list, int table, const char* name) {
-    if (table < 0)
-        return (sp_t){ -1, -1 };
+    if (table < 0) return (sp_t){ -1, -1 };
 
     st_t t = list->sts[table];
     for (int i = 0; i < t.len; i++) {
