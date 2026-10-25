@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdio.h>
 
 typedef enum { ERR_LEXER, ERR_PARSER } err_type_t;
 typedef enum { ERR_LOG, ERR_WAR, ERR_ERR } err_level_t;
@@ -13,6 +14,7 @@ typedef struct {
   err_type_t kind;
   err_level_t lvl;
   char* msg;
+  const char* file;
 } error_t;
 
 error_t

@@ -23,7 +23,7 @@ typedef struct {
   stl_t* stl;
 
   int current_table;
-
+  const char* file;
 } parser_ctx;
 
 bool parser_expect (parser_ctx* ctx, lexem_kind_t type);

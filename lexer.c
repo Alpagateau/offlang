@@ -246,6 +246,12 @@ void lexer_print_lexem (lexem_t lexem) {
       printf ("\'%c\' >", single_char_tokens[i].character);
     }
   }
+  
+  for (int i = 0; keyword_tokens[i].keyword != NULL; i++) {
+    if (lexem.kind == keyword_tokens[i].kind) {
+      printf ("\'%s\' >", keyword_tokens[i].keyword);
+    }
+  }
 
   switch (lexem.kind) {
   case LX_ERR: printf ("ERROR>"); break;
@@ -255,6 +261,35 @@ void lexer_print_lexem (lexem_t lexem) {
   case LX_TYPE_INT: printf ("type int>"); break;
   default: break;
   }
+}
+
+const char* lexer_lexem_str(lexem_kind_t kind)
+{ 
+
+  static char temp[2] = {0, 0};
+  for (int i = 0; single_char_tokens[i].character != 0; i++) {
+    if (kind == single_char_tokens[i].kind) {
+      temp[1] = single_char_tokens[i].character;
+      return temp;
+    }
+  }
+  
+  for (int i = 0; keyword_tokens[i].keyword != NULL; i++) {
+    if (kind == keyword_tokens[i].kind) {
+      return keyword_tokens[i].keyword;
+    }
+  }
+
+  switch (kind) {
+  case LX_ERR: return "ERROR>"; break;
+  case LX_INT: return "LX_INT"; break;
+  case LX_IDENT: 
+      return "IDENT";
+      break;
+  case LX_OP: return "operator"; break;
+  default: break;
+  }
+  return NULL;
 }
 
 void lexer_emit_error (const char* err, size_t line_num, size_t char_num) {

@@ -19,7 +19,8 @@ lexem_t parser_consume (parser_ctx* ctx, lexem_kind_t k) {
   if (parser_expect (ctx, k)) return lexer_consume_token (ctx->l);
 
   parser_new_error (
-  ctx, "Unexpected token : %d (expected %d)", k, lexer_peek_token (ctx->l).kind);
+  ctx, "Unexpected token : expected %s (got %s)", lexer_lexem_str(k), 
+   lexer_lexem_str(lexer_peek_token(ctx->l).kind));
 
   return (lexem_t){ LX_ERR };
 }
@@ -72,9 +73,10 @@ parse_result parse_integer (parser_ctx* ctx) {
 parse_result parser_new_error (parser_ctx* ctx, const char* err, ...) {
   va_list args;
   va_start (args, err);
-  error_t error = vnew_error (
-  lexer_get_line (ctx->l), lexer_get_char (ctx->l), ERR_PARSER, ERR_ERR, err, args);
+  error_t error = vnew_error (lexer_get_line (ctx->l), lexer_get_char (ctx->l), ERR_PARSER, ERR_ERR, err, args);
+  error.file = ctx->file;
   arena_new_err (ctx->a, error);
+
   return (parse_result){ .line_num = lexer_get_line (ctx->l),
     .char_num                      = lexer_get_char (ctx->l),
     .err                           = err };
@@ -461,7 +463,7 @@ parse_result parse_func_def (parser_ctx* ctx) {
 
 parse_result parse_compile_unit (parser_ctx* ctx) {
   list_t* lst = list_new (ctx->a);
-  while (parser_expect (ctx, LX_FUNC)) {
+  while (!parser_expect (ctx, LX_ERR)) {
     parse_result f = parse_func_def (ctx);
     if (!f.is_ok) return f;
     list_append (lst, f.result);

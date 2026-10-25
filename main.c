@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int compile_per_file (FILE* file) {
+int compile_per_file (FILE* file, const char* filename) {
   lexer_t lexer;
   arena_t* a = arena_new (10000, 0);
   stl_t stl  = { .len = 0, .capacity = 1, .sts = malloc (sizeof (st_t)) };
@@ -17,6 +17,7 @@ int compile_per_file (FILE* file) {
     .l             = &lexer,
     .stl           = &stl,
     .current_table = 0,
+    .file          = filename,
   };
 
   lexer_init (file, &lexer);
@@ -30,12 +31,11 @@ int compile_per_file (FILE* file) {
 
   printf ("arena : space taken : %zu\n", arena_get_taken (a));
 
-
   size_t err_len;
   error_t* errors = arena_get_errors (a, &err_len);
   for (size_t i = 0; i < err_len; i++) {
     printf (
-    "[ERROR (%zu:%zu)] %s\n", errors[i].line_num, errors[i].char_num, errors[i].msg);
+    "[ERROR %s:(%zu:%zu)] %s\n", errors[i].file ,errors[i].line_num, errors[i].char_num, errors[i].msg);
   }
   printf ("Got %zu errors\n", err_len);
 
@@ -51,11 +51,11 @@ int main (int argc, char** argv) {
   if (argc >= 2) {
     for (int i = 1; i < argc; i++) {
       FILE* f = fopen (argv[i], "r");
-      compile_per_file (f);
+      compile_per_file (f, argv[i]);
       printf ("\n");
       fclose (f);
     }
   } else {
-    compile_per_file (stdin);
+    compile_per_file (stdin, "[stdin]");
   }
 }

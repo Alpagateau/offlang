@@ -106,6 +106,7 @@ size_t lexer_get_line (lexer_t* l);
 size_t lexer_get_char (lexer_t* l);
 
 void lexer_print_lexem (lexem_t lexem);
+const char* lexer_lexem_str(lexem_kind_t lexem);
 void lexer_emit_error (const char* err, size_t line_num, size_t char_num);
 
 #endif
