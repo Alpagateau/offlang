@@ -8,8 +8,8 @@ struct arena_allocator;
 typedef struct arena_allocator arena_t;
 
 typedef enum {
-    AF_NONE      = 0 << 0,
-    AF_RESIZABLE = 1 << 1,
+  AF_NONE      = 0 << 0,
+  AF_RESIZABLE = 1 << 1,
 } arena_flag_t;
 
 // allocates a new arena of capicity `size`. flags are currently unused

@@ -5,67 +5,67 @@
 #include <stddef.h>
 
 typedef struct {
-    bool positive;
-    long long smax;
-    long long smin;
-    unsigned long long umax;
-    unsigned long long umin;
+  bool positive;
+  long long smax;
+  long long smin;
+  unsigned long long umax;
+  unsigned long long umin;
 } range_t;
 
 typedef enum {
-    TYPE_PRIMITIVE,
-    TYPE_BOUNDED,
-    TYPE_POINTER,
-    TYPE_NAMED,
-    TYPE_FUNC
+  TYPE_PRIMITIVE,
+  TYPE_BOUNDED,
+  TYPE_POINTER,
+  TYPE_NAMED,
+  TYPE_FUNC
 } type_kind_t;
 
 typedef enum {
-    // Integers
-    T_CHAR,
-    T_UCHAR,
-    T_SHORT,
-    T_USHORT,
-    T_INT,
-    T_UINT,
-    T_LONG,
-    T_ULONG,
-    T_LLONG,
-    T_ULLONG,
+  // Integers
+  T_CHAR,
+  T_UCHAR,
+  T_SHORT,
+  T_USHORT,
+  T_INT,
+  T_UINT,
+  T_LONG,
+  T_ULONG,
+  T_LLONG,
+  T_ULLONG,
 
-    // Floating point
-    T_FLOAT,
-    T_DOUBLE,
-    T_LDOUBLE,
+  // Floating point
+  T_FLOAT,
+  T_DOUBLE,
+  T_LDOUBLE,
 
-    // Other
-    T_BOOL,
-    T_VOID
+  // Other
+  T_BOOL,
+  T_VOID
 } primitive_type_t;
 
 typedef struct type_t {
-    type_kind_t kind;
+  type_kind_t kind;
 
+  union {
+    primitive_type_t prim_kind;
     union {
-        primitive_type_t prim_kind;
-        union {
-            struct {
-                struct type_t* base;
-                range_t range;
-            } bounded;
+      struct {
+        struct type_t* base;
+        range_t range;
+      } bounded;
 
-            struct {
-                struct type_t* base;
-            } pointer;
+      struct {
+        struct type_t* base;
+      } pointer;
 
-            struct {
-                struct type_t* ret_type;
-                struct type_t** args;
-                size_t len;
-                size_t capacity;
-            } func;
-        };
+      struct {
+        struct type_t* ret_type;
+        struct type_t** args;
+        size_t len;
+        size_t capacity;
+      } func;
     };
+  };
 } type_t;
 
 

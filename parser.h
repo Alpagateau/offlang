@@ -7,27 +7,27 @@
 #include "types.h"
 
 typedef struct {
-    bool is_ok;
-    size_t line_num;
-    size_t char_num;
-    union {
-        anode_t* result;
-        type_t* type;
-        const char* err;
-    };
+  bool is_ok;
+  size_t line_num;
+  size_t char_num;
+  union {
+    anode_t* result;
+    type_t* type;
+    const char* err;
+  };
 } parse_result;
 
 typedef struct {
-    lexer_t* l;
-    arena_t* a;
-    stl_t* stl;
+  lexer_t* l;
+  arena_t* a;
+  stl_t* stl;
 
-    int current_table;
+  int current_table;
 
 } parser_ctx;
 
 bool parser_expect (parser_ctx* ctx, lexem_kind_t type);
-lexem_t parser_consume(parser_ctx* ctx, lexem_kind_t k);
+lexem_t parser_consume (parser_ctx* ctx, lexem_kind_t k);
 
 bool parser_is_type_token (parser_ctx* ctx);
 primitive_type_t parser_token_to_type (lexem_kind_t k);

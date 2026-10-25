@@ -10,42 +10,42 @@
 typedef enum { SYM_VARIABLE, SYM_FUNC } symbol_kind_t;
 
 struct symbol {
-    symbol_kind_t kind;
-    char identifier[SYMBOL_LEN];
-    size_t line_num;
-    size_t char_num;
+  symbol_kind_t kind;
+  char identifier[SYMBOL_LEN];
+  size_t line_num;
+  size_t char_num;
 
-    type_t* type;
+  type_t* type;
 
+  union {
     union {
-        union {
-            int ival;
-        } default_value;
+      int ival;
+    } default_value;
 
-        int child_table;
-    } info;
+    int child_table;
+  } info;
 };
 
 typedef struct symbol symbol_t;
 
 typedef struct {
-    int prev;
-    symbol_t* symbols;
-    size_t capacity;
-    size_t len;
+  int prev;
+  symbol_t* symbols;
+  size_t capacity;
+  size_t len;
 } symbol_table;
 
 typedef symbol_table st_t;
 
 typedef struct {
-    size_t capacity;
-    size_t len;
-    st_t* sts;
+  size_t capacity;
+  size_t len;
+  st_t* sts;
 } stl_t;
 
 typedef struct {
-    int table;
-    int idx;
+  int table;
+  int idx;
 } sp_t;
 
 int symbol_table_new (stl_t* list, int prev);

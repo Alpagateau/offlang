@@ -13,35 +13,35 @@ struct list_node_t;
 typedef struct list_node_t list_node_t;
 
 typedef struct {
-    list_node_t* first;
-    list_node_t* last;
-    size_t len;
-    arena_t* arena;
+  list_node_t* first;
+  list_node_t* last;
+  size_t len;
+  arena_t* arena;
 } list_t;
 
 typedef enum {
-    // Expr
-    INT_LIT,
-    VARIABLE,
-    BI_OP,
-    UN_OP,
-    INDEXING,
-    CALLING,
+  // Expr
+  INT_LIT,
+  VARIABLE,
+  BI_OP,
+  UN_OP,
+  INDEXING,
+  CALLING,
 
-    // Statements
-    DECLARATION,
-    ASSIGNMENT,
-    IF_BRANCH,
-    WHILE_LOOP,
-    DEFER,
-    RETURN,
-    BLOCK,
+  // Statements
+  DECLARATION,
+  ASSIGNMENT,
+  IF_BRANCH,
+  WHILE_LOOP,
+  DEFER,
+  RETURN,
+  BLOCK,
 
-    // Top Level
-    FUNC_DEF,
+  // Top Level
+  FUNC_DEF,
 
-    // Final product ^^
-    COMPILE_UNIT
+  // Final product ^^
+  COMPILE_UNIT
 } ast_type_t;
 
 typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } ast_op_t;
@@ -79,9 +79,7 @@ anode_t* ast_get_lchild (anode_t* ast);
 anode_t* ast_get_rchild (anode_t* ast);
 ast_op_t ast_get_op (anode_t* ast);
 
-void ast_set_pos (
-    anode_t* ast, 
-    size_t sl, size_t sc, size_t el, size_t ec);
+void ast_set_pos (anode_t* ast, size_t sl, size_t sc, size_t el, size_t ec);
 
 anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast);
 
