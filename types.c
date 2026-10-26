@@ -22,8 +22,8 @@ type_t* type_new_bounded (type_t* base, long long min, long long max) {
   type_t* data             = (type_t*)malloc (sizeof (type_t));
   data->kind               = TYPE_BOUNDED;
   data->bounded.base       = base;
-  data->bounded.range.smin = min;
-  data->bounded.range.smax = max;
+  data->bounded.range.min = min;
+  data->bounded.range.max = max;
   return data;
 }
 
@@ -53,8 +53,8 @@ type_t* type_copy (type_t* src) {
   case TYPE_PRIMITIVE: data->prim_kind = src->prim_kind; break;
   case TYPE_BOUNDED:
     data->bounded.base       = type_copy (src->bounded.base);
-    data->bounded.range.smax = src->bounded.range.smax;
-    data->bounded.range.smin = src->bounded.range.smin;
+    data->bounded.range.max = src->bounded.range.max;
+    data->bounded.range.min = src->bounded.range.min;
     break;
   case TYPE_POINTER: data->pointer.base = type_copy (src->pointer.base); break;
   case TYPE_FUNC:
@@ -79,8 +79,8 @@ bool type_eq (type_t* a, type_t* b) {
   case TYPE_PRIMITIVE: return a->prim_kind == b->prim_kind;
   case TYPE_BOUNDED:
     if (!type_eq (a->bounded.base, b->bounded.base)) return false;
-    if (a->bounded.range.smax != b->bounded.range.smax) return false;
-    if (a->bounded.range.smin != b->bounded.range.smin) return false;
+    if (a->bounded.range.max != b->bounded.range.max) return false;
+    if (a->bounded.range.min != b->bounded.range.min) return false;
     break;
   case TYPE_POINTER: return type_eq (a->pointer.base, b->pointer.base);
   case TYPE_FUNC:
@@ -101,10 +101,10 @@ bool type_is_valid (type_t* t) {
   case TYPE_POINTER: return type_is_valid (t->pointer.base);
   case TYPE_BOUNDED: {
     // TODO : Need to check against base type
-    if (t->bounded.range.positive) {
-      return t->bounded.range.umax >= t->bounded.range.umin;
+    if (type_is_unsigned(t)) {
+      return t->bounded.range.max >= t->bounded.range.min;
     } else {
-      return t->bounded.range.smax >= t->bounded.range.smin;
+      return (int64_t)t->bounded.range.max >= (int64_t)t->bounded.range.min;
     }
   }
   case TYPE_NAMED: return false;
@@ -119,6 +119,31 @@ bool type_is_valid (type_t* t) {
   return false;
 }
 
+bool type_is_unsigned(type_t* t)
+{
+  if(t->kind == TYPE_PRIMITIVE)
+  {
+    switch(t->prim_kind)
+    { 
+      case T_CHAR :
+      case T_SHORT:
+      case T_INT  :
+      case T_LONG :
+      case T_LLONG:
+        return false;
+      case T_UCHAR :
+      case T_USHORT:
+      case T_UINT  :
+      case T_ULONG :
+      case T_ULLONG:
+        return true;
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
 range_t type_to_range (type_t* t) {
   if (t->kind == TYPE_BOUNDED) {
     return t->bounded.range;
@@ -126,38 +151,38 @@ range_t type_to_range (type_t* t) {
   if (t->kind == TYPE_PRIMITIVE) {
     switch (t->prim_kind) {
     case T_CHAR:
-      return (range_t){ .positive = false, .smax = CHAR_MAX, .smin = CHAR_MIN };
+      return (range_t){ .max = (uint64_t)CHAR_MAX, .min = (uint64_t)CHAR_MIN };
     case T_UCHAR:
-      return (range_t){ .positive = true, .umax = UCHAR_MAX, .umin = 0 };
+      return (range_t){ .max = UCHAR_MAX, .min = 0 };
     case T_SHORT:
-      return (range_t){ .positive = false, .smax = SHRT_MAX, .smin = SHRT_MIN };
+      return (range_t){ .max = (uint64_t)SHRT_MAX, .min = (uint64_t)SHRT_MIN };
     case T_USHORT:
-      return (range_t){ .positive = true, .umax = USHRT_MAX, .umin = 0 };
+      return (range_t){ .max = USHRT_MAX, .min = 0 };
     case T_INT:
-      return (range_t){ .positive = false, .smax = INT_MAX, .smin = INT_MIN };
+      return (range_t){ .max = (uint64_t)INT_MAX, .min = (uint64_t)INT_MIN };
     case T_UINT:
-      return (range_t){ .positive = true, .umax = UINT_MAX, .umin = 0 };
+      return (range_t){ .max = UINT_MAX, .min = 0 };
     case T_LONG:
-      return (range_t){ .positive = false, .smax = LONG_MAX, .smin = LONG_MIN };
+      return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
     case T_ULONG:
-      return (range_t){ .positive = true, .umax = ULONG_MAX, .umin = 0 };
+      return (range_t){ .max = ULONG_MAX, .min = 0 };
     case T_LLONG:
-      return (range_t){ .positive = false, .smax = LONG_MAX, .smin = LONG_MIN };
+      return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
     case T_ULLONG:
-      return (range_t){ .positive = true, .umax = ULONG_MAX, .umin = 0 };
+      return (range_t){ .max = ULONG_MAX, .min = 0 };
     case T_FLOAT:
-      return (range_t){ .positive = false, .smax = LONG_MAX, .smin = LONG_MIN };
+      return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
     case T_DOUBLE:
-      return (range_t){ .positive = false, .smax = LONG_MAX, .smin = LONG_MIN };
+      return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
     case T_LDOUBLE:
-      return (range_t){ .positive = false, .smax = LONG_MAX, .smin = LONG_MIN };
-    case T_BOOL: return (range_t){ .positive = true, .umin = 0, .umax = 1 };
+      return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
+    case T_BOOL: return (range_t){.min = 0, .max = 1 };
     case T_VOID:
-      return (range_t){ .positive = true, .umin = 0, .umax = 0 };
+      return (range_t){.min = 0, .max = 0 };
       break;
     }
   }
-  return (range_t){ true, 0, 0 };
+  return (range_t){ 0, 0 };
 }
 
 // To do better
@@ -168,7 +193,8 @@ bool type_is_sub (type_t* src, type_t* dst) {
       (dst->kind == TYPE_PRIMITIVE || dst->kind == TYPE_BOUNDED)) {
     range_t r_src = type_to_range (src);
     range_t r_dst = type_to_range (dst);
-    return r_src.smin >= r_dst.smin && r_src.smax <= r_dst.smax;
+    return (int64_t)r_src.min >= (int64_t)r_dst.min && 
+           (int64_t)r_src.max <= (int64_t)r_dst.max;
   }
   if (src->kind == TYPE_POINTER && dst->kind == TYPE_POINTER) {
     return type_is_sub (src->pointer.base, dst->pointer.base);
@@ -241,7 +267,7 @@ void type_print (type_t* t) {
   case TYPE_PRIMITIVE: print_type_primitive (t->prim_kind); break;
   case TYPE_BOUNDED:
     type_print (t->bounded.base);
-    printf ("<%lld, %lld>", t->bounded.range.smin, t->bounded.range.smax);
+    printf ("<%lu, %lu>", t->bounded.range.min, t->bounded.range.max);
     break;
   case TYPE_POINTER:
     type_print (t->pointer.base);

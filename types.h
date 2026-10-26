@@ -3,13 +3,11 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct {
-  bool positive;
-  long long smax;
-  long long smin;
-  unsigned long long umax;
-  unsigned long long umin;
+  uint64_t max;
+  uint64_t min;
 } range_t;
 
 typedef enum {
@@ -80,6 +78,7 @@ type_t* type_copy (type_t* src);
 bool type_eq (type_t* a, type_t* b);
 
 bool type_is_valid (type_t* t);
+bool type_is_unsigned(type_t* t);
 // returns true if src is a subtype of dst
 range_t type_to_range (type_t* t);
 bool type_is_sub (type_t* src, type_t* dst);
