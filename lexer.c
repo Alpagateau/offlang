@@ -1,10 +1,13 @@
 #include "lexer.h"
-#include "ast.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
 char_lexem_pair_t single_char_tokens[] = { { '=', LX_EQ },
+  { '+', LX_PLUS},
+  { '-', LX_MINUS},
+  { '*', LX_STAR},
+  { '/', LX_SLASH},
   { ',', LX_COMMA },
   { ':', LX_COLUMN },
   { ';', LX_SEMICOLUMN },
@@ -53,6 +56,8 @@ void lexer_init (FILE* f, lexer_t* l) {
   l->char_num   = 1;
   l->line_num   = 1;
   l->next_idx   = 0;
+  l->byte_num   = 0;  
+  l->in_comment = false;
   for (int i = 0; i < LEXER_BUFFER_SIZE; i++) {
     l->next_lexems[i] = lexer_next_token (l);
   }
@@ -71,6 +76,7 @@ int lexer_consume (lexer_t* l) {
     l->char_num = 0;
   }
   l->char_num++;
+  l->byte_num++;
   return c;
 }
 
@@ -99,6 +105,7 @@ lexem_t lexer_lex_integer (lexer_t* l) {
 
   size_t line_num = l->line_num;
   size_t char_num = l->char_num;
+  size_t start_byte = l->byte_num;
   while (isdigit (c)) {
     lexer_consume (l);
     if (idx >= 11) {
@@ -113,11 +120,13 @@ lexem_t lexer_lex_integer (lexer_t* l) {
     }
   }
 
-  lexem_t lex = (lexem_t){
-    .char_num = char_num,
-    .line_num = line_num,
-    .kind     = LX_INT,
-    .ival     = atoi (buffer),
+  lexem_t lex   = (lexem_t){
+    .char_num   = char_num,
+    .line_num   = line_num,
+    .kind       = LX_INT,
+    .ival       = atoi (buffer),
+    .start_byte = start_byte,
+    .end_byte   = l->byte_num
   };
   return lex;
 }
@@ -128,6 +137,7 @@ lexem_t lexer_lex_kw_identifier (lexer_t* l) {
   size_t idx = 0;
   int c      = lexer_peek (l);
 
+  size_t sbyte    = l->byte_num;
   size_t line_num = l->line_num;
   size_t char_num = l->char_num;
 
@@ -161,44 +171,10 @@ lexem_t lexer_lex_kw_identifier (lexer_t* l) {
     .kind     = LX_IDENT,
     .char_num = char_num,
     .line_num = line_num,
+    .start_byte = sbyte,
+    .end_byte = l->byte_num
   };
   strcpy (lex.identifier, buffer);
-  return lex;
-}
-
-lexem_t lexer_lex_operator (lexer_t* l) {
-  char buffer[3] = {};
-  size_t idx     = 0;
-  int c          = lexer_peek (l);
-
-  size_t line_num = l->line_num;
-  size_t char_num = l->char_num;
-
-  while (lexer_is_operator (c)) {
-    lexer_consume (l);
-    if (idx >= 2) {
-      lexer_emit_error ("Operator too long", l->line_num, l->char_num);
-      break;
-    }
-    buffer[idx++] = c;
-    c             = lexer_peek (l);
-  }
-
-  lexem_t lex = (lexem_t){ .char_num = char_num, .line_num = line_num, .kind = LX_OP };
-
-  if (strcmp (buffer, "+") == 0) {
-    lex.op = OP_ADD;
-  }
-  if (strcmp (buffer, "-") == 0) {
-    lex.op = OP_SUB;
-  }
-  if (strcmp (buffer, "*") == 0) {
-    lex.op = OP_MUL;
-  }
-  if (strcmp (buffer, "/") == 0) {
-    lex.op = OP_DIV;
-  }
-
   return lex;
 }
 
@@ -209,13 +185,7 @@ lexem_t lexer_next_token (lexer_t* l) {
   if (isdigit (c)) {
     return lexer_lex_integer (l);
   }
-
-  if (isalnum (c) || c == '_') {
-    return lexer_lex_kw_identifier (l);
-  }
-  if (lexer_is_operator (c)) {
-    return lexer_lex_operator (l);
-  }
+  
   for (int i = 0; single_char_tokens[i].character != 0; i++) {
     if (c == single_char_tokens[i].character) {
       lexer_consume (l);
@@ -224,6 +194,11 @@ lexem_t lexer_next_token (lexer_t* l) {
         .char_num             = l->char_num };
     }
   }
+
+  if (isalnum (c) || c == '_') {
+    return lexer_lex_kw_identifier (l);
+  }
+
   return (lexem_t){ .kind = LX_ERR };
 }
 
@@ -257,7 +232,6 @@ void lexer_print_lexem (lexem_t lexem) {
   case LX_ERR: printf ("ERROR>"); break;
   case LX_INT: printf ("int : %d>", lexem.ival); break;
   case LX_IDENT: printf ("ident : %s>", lexem.identifier); break;
-  case LX_OP: printf ("operator>"); break;
   case LX_TYPE_INT: printf ("type int>"); break;
   default: break;
   }
@@ -286,10 +260,19 @@ const char* lexer_lexem_str(lexem_kind_t kind)
   case LX_IDENT: 
       return "IDENT";
       break;
-  case LX_OP: return "operator"; break;
   default: break;
   }
   return NULL;
+}
+
+char lexer_token_to_char(lexem_kind_t kind)
+{ 
+  for (int i = 0; single_char_tokens[i].character != 0; i++) {
+    if (kind == single_char_tokens[i].kind){
+      return single_char_tokens[i].character;
+    }
+  }
+  return 0;
 }
 
 void lexer_emit_error (const char* err, size_t line_num, size_t char_num) {

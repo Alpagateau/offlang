@@ -110,12 +110,12 @@ parse_result parse_bi_op_factor (parser_ctx* ctx) {
     res = parse_expr (ctx);
     if (!res.is_ok) return res;
     parser_consume (ctx, LX_CPAR);
-  } else if (lex.kind == LX_OP) {
+  } else if (lex.kind == LX_PLUS || lex.kind == LX_MINUS) {
     lexem_t tok      = lexer_consume_token (ctx->l);
     parse_result sub = parse_bi_op_factor (ctx);
     if (!sub.is_ok) return sub;
     res.is_ok  = tok.kind != LX_ERR;
-    res.result = ast_new_unary (ctx->a, tok.op, sub.result);
+    res.result = ast_new_unary (ctx->a, lexer_token_to_char(tok.kind), sub.result);
     ast_set_pos (res.result, tok.line_num, tok.char_num, tok.line_num, tok.char_num); // I need a better interface come on
   } else {
     res = parser_new_error (ctx, "Could not parse factor");
@@ -160,13 +160,13 @@ parse_result parse_bi_op_term (parser_ctx* ctx) {
 
   while (true) {
     lexem_t op_tok = lexer_peek_token (ctx->l);
-    if (op_tok.kind != LX_OP || (op_tok.op != OP_DIV && op_tok.op != OP_MUL))
+    if (op_tok.kind != LX_SLASH && op_tok.kind != LX_STAR)
       break;
 
     lexer_consume_token (ctx->l);
     parse_result right = parse_bi_op_factor (ctx);
     if (!right.is_ok) return right;
-    left.result = ast_new_binary (ctx->a, op_tok.op, left.result, right.result);
+    left.result = ast_new_binary (ctx->a, lexer_token_to_char(op_tok.kind), left.result, right.result);
   }
   left.line_num = lexer_get_line (ctx->l);
   left.char_num = lexer_get_char (ctx->l);
@@ -181,14 +181,14 @@ parse_result parse_expr (parser_ctx* ctx) {
   while (true) {
     lexem_t op_tok = lexer_peek_token (ctx->l);
 
-    if (op_tok.kind != LX_OP || (op_tok.op != OP_ADD && op_tok.op != OP_SUB))
+    if (op_tok.kind != LX_PLUS && op_tok.kind != LX_MINUS)
       break;
 
     lexer_consume_token (ctx->l);
     parse_result right = parse_bi_op_term (ctx);
     if (!right.is_ok) return right;
 
-    left.result = ast_new_binary (ctx->a, op_tok.op, left.result, right.result);
+    left.result = ast_new_binary (ctx->a, lexer_token_to_char(op_tok.kind), left.result, right.result);
   }
 
   return left;

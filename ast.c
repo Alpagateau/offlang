@@ -20,12 +20,12 @@ struct ast_node {
     struct {
       anode_t* lchild;
       anode_t* rchild;
-      ast_op_t op;
+      char op;
     } binary;
 
     struct {
       anode_t* child;
-      ast_op_t op;
+      char op;
     } unary;
 
     struct {
@@ -100,7 +100,7 @@ anode_t* ast_new_var (arena_t* arena, sp_t symbol) {
   return n;
 }
 
-anode_t* ast_new_binary (arena_t* arena, ast_op_t op, anode_t* lc, anode_t* rc) {
+anode_t* ast_new_binary (arena_t* arena, char op, anode_t* lc, anode_t* rc) {
   anode_t* n       = ast_new (arena, BI_OP);
   n->binary.op     = op;
   n->binary.lchild = lc;
@@ -108,7 +108,7 @@ anode_t* ast_new_binary (arena_t* arena, ast_op_t op, anode_t* lc, anode_t* rc) 
   return n;
 }
 
-anode_t* ast_new_unary (arena_t* arena, ast_op_t op, anode_t* child) {
+anode_t* ast_new_unary (arena_t* arena, char op, anode_t* child) {
   anode_t* n     = ast_new (arena, UN_OP);
   n->unary.op    = op;
   n->unary.child = child;
@@ -229,10 +229,10 @@ anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast) {
 
       int v = 0;
       switch (ast->binary.op) {
-      case OP_ADD: v = a + b; break;
-      case OP_SUB: v = a - b; break;
-      case OP_MUL: v = a * b; break;
-      case OP_DIV: v = a / b; break;
+      case '+': v = a + b; break;
+      case '-': v = a - b; break;
+      case '*': v = a * b; break;
+      case '/': v = a / b; break;
       }
       return ast_new_int (arena, v);
     }
@@ -241,9 +241,9 @@ anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast) {
   case UN_OP: {
     ast->unary.child = ast_simplify_expr (arena, ast->unary.child);
     if (ast_get_type (ast->unary.child) == INT_LIT) {
-      if (ast->unary.op == OP_ADD) {
+      if (ast->unary.op == '+') {
         return ast->unary.child;
-      } else if (ast->unary.op == OP_SUB) {
+      } else if (ast->unary.op == '-') {
         return ast_new_int (arena, -ast_get_ival (ast->unary.child));
       }
     }
@@ -311,15 +311,6 @@ anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast) {
   return NULL;
 }
 
-void _print_op (ast_op_t op) {
-  switch (op) {
-  case OP_ADD: printf ("+"); break;
-  case OP_SUB: printf ("-"); break;
-  case OP_MUL: printf ("*"); break;
-  case OP_DIV: printf ("/"); break;
-  }
-}
-
 void _print_ast (anode_t* ast, stl_t* stl, size_t depth) {
   if (ast == NULL) {
     printf ("[ NULL ]");
@@ -333,12 +324,12 @@ void _print_ast (anode_t* ast, stl_t* stl, size_t depth) {
   case BI_OP:
     printf ("(");
     _print_ast (ast->binary.lchild, stl, depth);
-    _print_op (ast->binary.op);
+    printf(" %c ", ast->binary.op);
     _print_ast (ast->binary.rchild, stl, depth);
     printf (")");
     break;
   case UN_OP:
-    _print_op (ast->unary.op);
+    printf("%c", ast->unary.op);
     _print_ast (ast->unary.child, stl, depth);
     break;
   case INDEXING:

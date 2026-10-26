@@ -12,7 +12,6 @@ typedef enum {
   // Basic expr
   LX_INT,
   LX_IDENT,
-  LX_OP,
 
   // Types keywords
   LX_TYPE_CHAR,
@@ -39,6 +38,10 @@ typedef enum {
   LX_FUNC,
 
   // Punctuation
+  LX_PLUS,
+  LX_MINUS,
+  LX_STAR,
+  LX_SLASH,
   LX_COMMA,
   LX_EQ,
   LX_COLUMN,
@@ -58,10 +61,11 @@ typedef struct {
   lexem_kind_t kind;
   size_t line_num;
   size_t char_num;
+  size_t start_byte;
+  size_t end_byte;
   union {
     int ival;
     char identifier[64];
-    ast_op_t op;
   };
 } lexem_t;
 
@@ -69,6 +73,7 @@ typedef struct {
   FILE* input_file;
   size_t line_num;
   size_t char_num;
+  size_t byte_num;
   lexem_t next_lexems[LEXER_BUFFER_SIZE];
   size_t next_idx;
   bool in_comment;
@@ -94,7 +99,6 @@ void lexer_consume_spaces (lexer_t* l);
 
 lexem_t lexer_lex_integer (lexer_t* l);
 lexem_t lexer_lex_kw_identifier (lexer_t* l);
-lexem_t lexer_lex_operator (lexer_t* l);
 
 lexem_t lexer_next_token (lexer_t* l);
 lexem_t lexer_peek_token (lexer_t* l);
@@ -107,6 +111,7 @@ size_t lexer_get_char (lexer_t* l);
 
 void lexer_print_lexem (lexem_t lexem);
 const char* lexer_lexem_str(lexem_kind_t lexem);
+char lexer_token_to_char(lexem_kind_t kind);
 void lexer_emit_error (const char* err, size_t line_num, size_t char_num);
 
 #endif

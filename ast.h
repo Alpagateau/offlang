@@ -44,15 +44,12 @@ typedef enum {
   COMPILE_UNIT
 } ast_type_t;
 
-typedef enum { OP_ADD, OP_SUB, OP_MUL, OP_DIV } ast_op_t;
-
-
 anode_t* ast_new (arena_t* arena, ast_type_t type);
 
 anode_t* ast_new_int (arena_t* arena, int value);
 anode_t* ast_new_var (arena_t* arena, sp_t symbol);
-anode_t* ast_new_binary (arena_t* arena, ast_op_t op, anode_t* lc, anode_t* rc);
-anode_t* ast_new_unary (arena_t* arena, ast_op_t op, anode_t* child);
+anode_t* ast_new_binary (arena_t* arena, char op, anode_t* lc, anode_t* rc);
+anode_t* ast_new_unary (arena_t* arena, char op, anode_t* child);
 anode_t* ast_new_index (arena_t* arena, anode_t* expr, anode_t* idx);
 anode_t* ast_new_fcall (arena_t* arena, anode_t* callee, list_t* args);
 
@@ -77,7 +74,7 @@ int ast_get_ival (anode_t* ast);
 sp_t ast_get_symbol (anode_t* ast);
 anode_t* ast_get_lchild (anode_t* ast);
 anode_t* ast_get_rchild (anode_t* ast);
-ast_op_t ast_get_op (anode_t* ast);
+char ast_get_op (anode_t* ast);
 
 void ast_set_pos (anode_t* ast, size_t sl, size_t sc, size_t el, size_t ec);
 
