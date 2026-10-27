@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "arena.h"
 
 typedef struct {
   uint64_t max;
@@ -67,14 +68,15 @@ typedef struct type_t {
 } type_t;
 
 
-type_t* type_new_primary (primitive_type_t t);
-type_t* type_new_pointer (type_t* base);
-type_t* type_new_bounded (type_t* base, long long min, long long max);
-type_t* type_new_func ();
-void type_func_add_arg (type_t* f, type_t* t);
+type_t* type_new_primary (arena_t* a, primitive_type_t t);
+type_t* type_new_pointer (arena_t* a, type_t* base);
+type_t* type_new_bounded (arena_t* a, type_t* base, long long min, long long max);
+
+type_t* type_new_func (arena_t* a);
+void type_func_add_arg (arena_t* a, type_t* f, type_t* t);
 void type_func_set_ret (type_t* f, type_t* t);
 
-type_t* type_copy (type_t* src);
+type_t* type_copy (arena_t* a, type_t* src);
 bool type_eq (type_t* a, type_t* b);
 
 bool type_is_valid (type_t* t);
@@ -85,13 +87,12 @@ bool type_is_sub (type_t* src, type_t* dst);
 // type_t *common_super_type(type_t* a, type_t* b);
 
 // Binaries (unaries use the same but with 0)
-type_t* type_add (type_t* a, type_t* b);
-type_t* type_sub (type_t* a, type_t* b);
-type_t* type_mul (type_t* a, type_t* b);
-type_t* type_div (type_t* a, type_t* b);
+type_t* type_add (arena_t* arena, type_t* a, type_t* b);
+type_t* type_sub (arena_t* arena, type_t* a, type_t* b);
+type_t* type_mul (arena_t* arena, type_t* a, type_t* b);
+type_t* type_div (arena_t* arena, type_t* a, type_t* b);
 
 void type_free (type_t* t);
-
 void type_print (type_t* t);
 
 #endif

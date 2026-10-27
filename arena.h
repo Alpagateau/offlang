@@ -17,6 +17,7 @@ arena_t* arena_new (size_t size, arena_flag_t flags);
 
 // allocates a region inside of an arena
 void* arena_alloc (arena_t* arena, size_t size);
+void* arena_realloc(arena_t* arena, void* src, size_t old_size, size_t new_size);
 size_t arena_get_taken (arena_t* arena);
 
 // error handling

@@ -4,65 +4,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-type_t* type_new_primary (primitive_type_t t) {
-  type_t* data    = (type_t*)malloc (sizeof (type_t));
+type_t* type_new_primary (arena_t* a, primitive_type_t t) {
+  type_t* data    = (type_t*)arena_alloc (a, sizeof (type_t));
   data->kind      = TYPE_PRIMITIVE;
   data->prim_kind = t;
   return data;
 }
 
-type_t* type_new_pointer (type_t* base) {
-  type_t* data       = (type_t*)malloc (sizeof (type_t));
+type_t* type_new_pointer (arena_t* a, type_t* base) {
+  type_t* data       = (type_t*)arena_alloc(a, sizeof (type_t));
   data->kind         = TYPE_POINTER;
   data->pointer.base = base;
   return data;
 }
 
-type_t* type_new_bounded (type_t* base, long long min, long long max) {
-  type_t* data             = (type_t*)malloc (sizeof (type_t));
-  data->kind               = TYPE_BOUNDED;
-  data->bounded.base       = base;
+type_t* type_new_bounded (arena_t* a, type_t* base, long long min, long long max) {
+  type_t* data            = (type_t*)arena_alloc(a, sizeof (type_t));
+  data->kind              = TYPE_BOUNDED;
+  data->bounded.base      = base;
   data->bounded.range.min = min;
   data->bounded.range.max = max;
   return data;
 }
 
-type_t* type_new_func () {
-  type_t* data        = (type_t*)malloc (sizeof (type_t));
+type_t* type_new_func (arena_t* a) {
+  type_t* data        = (type_t*)arena_alloc (a, sizeof (type_t));
   data->kind          = TYPE_FUNC;
   data->func.len      = 0;
-  data->func.capacity = 2;
-  data->func.args     = (type_t**)malloc (sizeof (type_t*) * 2);
+  data->func.capacity = 8;
+  data->func.args     = (type_t**)arena_alloc (a, sizeof (type_t*) * 8);
   return data;
 }
-void type_func_add_arg (type_t* f, type_t* t) {
+void type_func_add_arg (arena_t* a, type_t* f, type_t* t) {
   if (f->func.len >= f->func.capacity - 1) {
     f->func.capacity *= 2;
-    f->func.args = (type_t**)realloc (f->func.args, sizeof (size_t*) * f->func.capacity);
+    f->func.args = (type_t**)arena_realloc (a,
+    f->func.args,
+    sizeof (size_t*) * f->func.capacity / 2,
+    sizeof (size_t*) * f->func.capacity);
   }
-
   f->func.args[f->func.len++] = t;
 }
 
 void type_func_set_ret (type_t* f, type_t* t) { f->func.ret_type = t; }
 
-type_t* type_copy (type_t* src) {
-  type_t* data = (type_t*)malloc (sizeof (type_t));
+type_t* type_copy (arena_t* a, type_t* src) {
+  type_t* data = (type_t*)arena_alloc(a, sizeof (type_t));
   data->kind   = src->kind;
   switch (data->kind) {
   case TYPE_PRIMITIVE: data->prim_kind = src->prim_kind; break;
   case TYPE_BOUNDED:
-    data->bounded.base       = type_copy (src->bounded.base);
+    data->bounded.base      = type_copy (a, src->bounded.base);
     data->bounded.range.max = src->bounded.range.max;
     data->bounded.range.min = src->bounded.range.min;
     break;
-  case TYPE_POINTER: data->pointer.base = type_copy (src->pointer.base); break;
+  case TYPE_POINTER:
+    data->pointer.base = type_copy (a, src->pointer.base);
+    break;
   case TYPE_FUNC:
     data->func.len      = src->func.len;
     data->func.capacity = src->func.len;
-    data->func.args     = malloc (sizeof (type_t*) * src->func.len);
+    data->func.args     = arena_alloc(a, sizeof (type_t*) * src->func.len);
     for (int i = 0; i < data->func.len; i++) {
-      data->func.args[i] = type_copy (src->func.args[i]);
+      data->func.args[i] = type_copy (a, src->func.args[i]);
     }
   default:
     free (data);
@@ -101,7 +105,7 @@ bool type_is_valid (type_t* t) {
   case TYPE_POINTER: return type_is_valid (t->pointer.base);
   case TYPE_BOUNDED: {
     // TODO : Need to check against base type
-    if (type_is_unsigned(t)) {
+    if (type_is_unsigned (t)) {
       return t->bounded.range.max >= t->bounded.range.min;
     } else {
       return (int64_t)t->bounded.range.max >= (int64_t)t->bounded.range.min;
@@ -119,26 +123,20 @@ bool type_is_valid (type_t* t) {
   return false;
 }
 
-bool type_is_unsigned(type_t* t)
-{
-  if(t->kind == TYPE_PRIMITIVE)
-  {
-    switch(t->prim_kind)
-    { 
-      case T_CHAR :
-      case T_SHORT:
-      case T_INT  :
-      case T_LONG :
-      case T_LLONG:
-        return false;
-      case T_UCHAR :
-      case T_USHORT:
-      case T_UINT  :
-      case T_ULONG :
-      case T_ULLONG:
-        return true;
-      default:
-        return false;
+bool type_is_unsigned (type_t* t) {
+  if (t->kind == TYPE_PRIMITIVE) {
+    switch (t->prim_kind) {
+    case T_CHAR:
+    case T_SHORT:
+    case T_INT:
+    case T_LONG:
+    case T_LLONG: return false;
+    case T_UCHAR:
+    case T_USHORT:
+    case T_UINT:
+    case T_ULONG:
+    case T_ULLONG: return true;
+    default: return false;
     }
   }
   return false;
@@ -152,34 +150,27 @@ range_t type_to_range (type_t* t) {
     switch (t->prim_kind) {
     case T_CHAR:
       return (range_t){ .max = (uint64_t)CHAR_MAX, .min = (uint64_t)CHAR_MIN };
-    case T_UCHAR:
-      return (range_t){ .max = UCHAR_MAX, .min = 0 };
+    case T_UCHAR: return (range_t){ .max = UCHAR_MAX, .min = 0 };
     case T_SHORT:
       return (range_t){ .max = (uint64_t)SHRT_MAX, .min = (uint64_t)SHRT_MIN };
-    case T_USHORT:
-      return (range_t){ .max = USHRT_MAX, .min = 0 };
+    case T_USHORT: return (range_t){ .max = USHRT_MAX, .min = 0 };
     case T_INT:
       return (range_t){ .max = (uint64_t)INT_MAX, .min = (uint64_t)INT_MIN };
-    case T_UINT:
-      return (range_t){ .max = UINT_MAX, .min = 0 };
+    case T_UINT: return (range_t){ .max = UINT_MAX, .min = 0 };
     case T_LONG:
       return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
-    case T_ULONG:
-      return (range_t){ .max = ULONG_MAX, .min = 0 };
+    case T_ULONG: return (range_t){ .max = ULONG_MAX, .min = 0 };
     case T_LLONG:
       return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
-    case T_ULLONG:
-      return (range_t){ .max = ULONG_MAX, .min = 0 };
+    case T_ULLONG: return (range_t){ .max = ULONG_MAX, .min = 0 };
     case T_FLOAT:
       return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
     case T_DOUBLE:
       return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
     case T_LDOUBLE:
       return (range_t){ .max = (uint64_t)LONG_MAX, .min = (uint64_t)LONG_MIN };
-    case T_BOOL: return (range_t){.min = 0, .max = 1 };
-    case T_VOID:
-      return (range_t){.min = 0, .max = 0 };
-      break;
+    case T_BOOL: return (range_t){ .min = 0, .max = 1 };
+    case T_VOID: return (range_t){ .min = 0, .max = 0 }; break;
     }
   }
   return (range_t){ 0, 0 };
@@ -193,7 +184,7 @@ bool type_is_sub (type_t* src, type_t* dst) {
       (dst->kind == TYPE_PRIMITIVE || dst->kind == TYPE_BOUNDED)) {
     range_t r_src = type_to_range (src);
     range_t r_dst = type_to_range (dst);
-    return (int64_t)r_src.min >= (int64_t)r_dst.min && 
+    return (int64_t)r_src.min >= (int64_t)r_dst.min &&
            (int64_t)r_src.max <= (int64_t)r_dst.max;
   }
   if (src->kind == TYPE_POINTER && dst->kind == TYPE_POINTER) {
@@ -228,14 +219,13 @@ void type_free (type_t* t) {
   case TYPE_NAMED: break;
   case TYPE_FUNC:
     for (int i = 0; i < t->func.len; i++) {
-      fflush (stdout);
       type_free (t->func.args[i]);
     }
     type_free (t->func.ret_type);
-    free (t->func.args);
+    //free (t->func.args);
     break;
   }
-  free (t);
+  //free (t);
 }
 
 void print_type_primitive (primitive_type_t t) {

@@ -36,6 +36,20 @@ void* arena_alloc (arena_t* arena, size_t size) {
   return ptr;
 }
 
+void* arena_realloc(arena_t* arena, void* src, size_t old_size, size_t new_size)
+{
+  void* new_mem = arena_alloc(arena, new_size);
+  if(!new_mem) return NULL;
+  if(!src) return new_mem;
+
+  size_t bytes_to_copy = (old_size > new_size) ? new_size : old_size;
+  for(size_t i = 0; i < bytes_to_copy; i++)
+  {
+    ((char*)new_mem)[i] = ((char*)src)[i];
+  }
+  return new_mem;
+}
+
 size_t arena_get_taken (arena_t* arena) { return arena->cursor; }
 
 void arena_new_err (arena_t* arena, error_t err) {

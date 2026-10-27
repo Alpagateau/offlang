@@ -1,9 +1,10 @@
+
 # This is a comment
-# And this is an inlise comment #
+# And this is an inlise comment 
 
 # File management
-include "otherfile.off" # other off source file can be loaded. No header file required
-cinclude <stdio.h>      # C headers can also be included. All their types, defines and functions will be imported
+# include "otherfile.off"  other off source file can be loaded. No header file required 
+# cinclude <stdio.h>       C headers can also be included. All their types, defines and functions will be imported
 
 # Integer types
 char c;

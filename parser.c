@@ -200,7 +200,7 @@ parse_result parse_type (parser_ctx* ctx) {
   }
   parse_result res;
   lexem_t type_token = lexer_consume_token (ctx->l);
-  type_t* t = type_new_primary (parser_token_to_type (type_token.kind));
+  type_t* t = type_new_primary (ctx->a, parser_token_to_type (type_token.kind));
   if (parser_expect (ctx, LX_LT)) {
     lexer_consume_token (ctx->l);
     parse_result bmin = parse_expr (ctx);
@@ -217,11 +217,11 @@ parse_result parse_type (parser_ctx* ctx) {
       return parser_new_error (ctx, "Boudaries need to be integer expressions");
     int min = ast_get_ival (bmin.result);
     int max = ast_get_ival (bmax.result);
-    t       = type_new_bounded (t, min, max);
+    t       = type_new_bounded (ctx->a, t, min, max);
   }
 
   while (parser_expect (ctx, LX_CARAT)) {
-    t = type_new_pointer (t);
+    t = type_new_pointer(ctx->a, t);
     lexer_consume_token (ctx->l);
   }
 
@@ -410,7 +410,7 @@ parse_result parse_func_def (parser_ctx* ctx) {
   strcpy (sym.identifier, name.identifier);
 
   parser_consume(ctx, LX_OPAR);
-  type_t* t = type_new_func ();
+  type_t* t = type_new_func (ctx->a);
 
   while (!parser_expect (ctx, LX_CPAR)) {
     if (t->func.len > 0) {
@@ -426,11 +426,11 @@ parse_result parse_func_def (parser_ctx* ctx) {
     lexem_t ident = parser_consume(ctx, LX_IDENT);
 
     // Add the type to the func type
-    type_func_add_arg(t, type_arg.type);
+    type_func_add_arg(ctx->a, t, type_arg.type);
 
     // Create the symbol for the func args
     symbol_t arg_sym = (symbol_t){ .kind = SYM_VARIABLE,
-      .type                              = type_copy (type_arg.type),
+      .type                              = type_copy (ctx->a, type_arg.type),
       .line_num                          = lexer_get_line (ctx->l),
       .char_num                          = lexer_get_char (ctx->l) };
     strcpy (arg_sym.identifier, ident.identifier);
@@ -444,7 +444,7 @@ parse_result parse_func_def (parser_ctx* ctx) {
     if (!p.is_ok) return p;
     type_func_set_ret (t, p.type);
   } else {
-    type_func_set_ret (t, type_new_primary (T_VOID));
+    type_func_set_ret (t, type_new_primary (ctx->a, T_VOID));
   }
 
   sym.type = t;
@@ -464,9 +464,18 @@ parse_result parse_func_def (parser_ctx* ctx) {
 parse_result parse_compile_unit (parser_ctx* ctx) {
   list_t* lst = list_new (ctx->a);
   while (!parser_expect (ctx, LX_ERR)) {
-    parse_result f = parse_func_def (ctx);
-    if (!f.is_ok) return f;
-    list_append (lst, f.result);
+    parse_result res;
+    if(parser_is_type_token(ctx))
+    {
+      parse_result d = parse_declaration(ctx);
+      if(!d.is_ok) return d;
+      res = d;
+    } else {
+      parse_result f = parse_func_def (ctx);
+      if(!f.is_ok) return f;
+      res = f;
+    }
+    list_append (lst, res.result);
   }
   parse_result res;
   res.is_ok  = true;
