@@ -67,16 +67,19 @@ anode_t* ast_new_func_def (arena_t* arena, sp_t sp, anode_t* stmt);
 
 anode_t* ast_new_compile_unit (arena_t* arena, list_t* lst);
 
-ast_type_t ast_get_type (anode_t* ast);
 
 // getter
-int ast_get_ival (anode_t* ast);
-sp_t ast_get_symbol (anode_t* ast);
-anode_t* ast_get_lchild (anode_t* ast);
-anode_t* ast_get_rchild (anode_t* ast);
-char ast_get_op (anode_t* ast);
+ast_type_t ast_get_type (anode_t* ast);
+int        ast_get_ival (anode_t* ast);
+sp_t       ast_get_symbol (anode_t* ast);
+anode_t*   ast_get_lchild (anode_t* ast);
+anode_t*   ast_get_rchild (anode_t* ast);
+char       ast_get_op (anode_t* ast);
 
-void ast_set_pos (anode_t* ast, size_t sl, size_t sc, size_t el, size_t ec);
+size_t ast_get_start(anode_t* ast);
+size_t ast_get_end(anode_t* ast);
+
+void ast_set_pos (anode_t* ast, size_t start, size_t end);
 
 anode_t* ast_simplify_expr (arena_t* arena, anode_t* ast);
 

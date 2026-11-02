@@ -209,6 +209,16 @@ void lexer_throw_till_break (lexer_t* l) {
   lexer_consume_token (l);
 }
 
+size_t lexer_get_start_byte(lexer_t* l)
+{
+  return lexer_peek_token(l).start_byte;
+}
+
+size_t lexer_get_end_byte  (lexer_t* l)
+{
+  return lexer_peek_token(l).end_byte;
+}
+
 size_t lexer_get_line (lexer_t* l) { return lexer_peek_token (l).line_num; }
 
 size_t lexer_get_char (lexer_t* l) { return lexer_peek_token (l).char_num; }

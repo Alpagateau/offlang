@@ -6,11 +6,8 @@
 
 struct ast_node {
   ast_type_t type;
-  size_t start_line_num;
-  size_t start_char_num;
-
-  size_t end_line_num;
-  size_t end_char_num;
+  size_t start_byte;
+  size_t end_byte;
 
   union {
     int ivar;
@@ -430,9 +427,16 @@ void print_ast (anode_t* ast, stl_t* stl) {
   _print_ast (ast, stl, 1);
 }
 
-void ast_set_pos (anode_t* ast, size_t sl, size_t sc, size_t el, size_t ec) {
-  ast->start_char_num = sc;
-  ast->start_line_num = sl;
-  ast->end_char_num   = ec;
-  ast->end_line_num   = el;
+size_t ast_get_start(anode_t* ast)
+{
+  return ast->start_byte;
+}
+size_t ast_get_end(anode_t* ast)
+{
+  return ast->end_byte;
+}
+
+void ast_set_pos (anode_t* ast, size_t start, size_t end) {
+  ast->start_byte = start;
+  ast->end_byte = end;
 }

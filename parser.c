@@ -66,7 +66,7 @@ parse_result parse_integer (parser_ctx* ctx) {
   lexem_t lex = parser_consume (ctx, LX_INT);
   res.is_ok   = lex.kind != LX_ERR;
   res.result  = ast_new_int (ctx->a, lex.ival);
-  ast_set_pos (res.result, lex.line_num, lex.char_num, lex.line_num, lex.char_num);
+  ast_set_pos (res.result, lex.start_byte, lex.end_byte);
   return res;
 }
 
@@ -91,7 +91,7 @@ parse_result parse_variable (parser_ctx* ctx) {
     parser_new_error (ctx, "variable %s not declared", lex.identifier);
   }
   res.result = ast_new_var (ctx->a, symbol);
-  ast_set_pos (res.result, lex.line_num, lex.char_num, lex.line_num, lex.char_num);
+  ast_set_pos (res.result, lex.start_byte, lex.end_byte);
   return res;
 }
 
@@ -101,22 +101,21 @@ parse_result parse_bi_op_factor (parser_ctx* ctx) {
 
   if (lex.kind == LX_IDENT) {
     res = parse_variable (ctx);
-    ast_set_pos (res.result, lex.line_num, lex.char_num, lex.line_num, lex.char_num);
   } else if (lex.kind == LX_INT) {
     res = parse_integer (ctx);
-    ast_set_pos (res.result, lex.line_num, lex.char_num, lex.line_num, lex.char_num);
   } else if (lex.kind == LX_OPAR) {
-    lexer_consume_token (ctx->l);
+    lexem_t opar = lexer_consume_token (ctx->l);
     res = parse_expr (ctx);
     if (!res.is_ok) return res;
-    parser_consume (ctx, LX_CPAR);
+    lexem_t cpar = parser_consume (ctx, LX_CPAR);
+    ast_set_pos(res.result, opar.start_byte, cpar.end_byte);
   } else if (lex.kind == LX_PLUS || lex.kind == LX_MINUS) {
     lexem_t tok      = lexer_consume_token (ctx->l);
     parse_result sub = parse_bi_op_factor (ctx);
     if (!sub.is_ok) return sub;
     res.is_ok  = tok.kind != LX_ERR;
     res.result = ast_new_unary (ctx->a, lexer_token_to_char(tok.kind), sub.result);
-    ast_set_pos (res.result, tok.line_num, tok.char_num, tok.line_num, tok.char_num); // I need a better interface come on
+    ast_set_pos (res.result, tok.start_byte, ast_get_end(sub.result)); // I need a better interface come on
   } else {
     res = parser_new_error (ctx, "Could not parse factor");
   }
@@ -124,15 +123,18 @@ parse_result parse_bi_op_factor (parser_ctx* ctx) {
   if (!res.is_ok) return res;
 
   while (parser_expect (ctx, LX_OPAR) || parser_expect (ctx, LX_OSQR_BRA)) {
+    size_t start = ast_get_start(res.result);
     if (parser_expect (ctx, LX_OSQR_BRA)) {
       // indexing
       lexer_consume_token (ctx->l);
       parse_result index = parse_expr (ctx);
       if (!index.is_ok) return index;
+      lexem_t end_token = parser_consume (ctx, LX_CSQR_BRA);
       res.result = ast_new_index (ctx->a, res.result, index.result);
-      parser_consume (ctx, LX_CSQR_BRA);
+      ast_set_pos(res.result, start, end_token.end_byte);
       continue;
     }
+
     if (parser_expect (ctx, LX_OPAR)) {
       lexer_consume_token (ctx->l);
       list_t* lst = list_new (ctx->a);
@@ -147,8 +149,9 @@ parse_result parse_bi_op_factor (parser_ctx* ctx) {
           break;
         }
       }
-      lexer_consume_token (ctx->l);
+      lexem_t cpar = lexer_consume_token (ctx->l);
       res.result = ast_new_fcall (ctx->a, res.result, lst);
+      ast_set_pos(res.result, start, cpar.end_byte);
     }
   }
   return res;
@@ -157,6 +160,7 @@ parse_result parse_bi_op_factor (parser_ctx* ctx) {
 parse_result parse_bi_op_term (parser_ctx* ctx) {
   parse_result left = parse_bi_op_factor (ctx);
   if (!left.is_ok) return left;
+  size_t start = ast_get_start(left.result);
 
   while (true) {
     lexem_t op_tok = lexer_peek_token (ctx->l);
@@ -167,9 +171,8 @@ parse_result parse_bi_op_term (parser_ctx* ctx) {
     parse_result right = parse_bi_op_factor (ctx);
     if (!right.is_ok) return right;
     left.result = ast_new_binary (ctx->a, lexer_token_to_char(op_tok.kind), left.result, right.result);
+    ast_set_pos(left.result, start, ast_get_end(right.result));
   }
-  left.line_num = lexer_get_line (ctx->l);
-  left.char_num = lexer_get_char (ctx->l);
 
   return left;
 }
@@ -177,7 +180,7 @@ parse_result parse_bi_op_term (parser_ctx* ctx) {
 parse_result parse_expr (parser_ctx* ctx) {
   parse_result left = parse_bi_op_term (ctx);
   if (!left.is_ok) return left;
-
+  size_t start = ast_get_start(left.result);
   while (true) {
     lexem_t op_tok = lexer_peek_token (ctx->l);
 
@@ -189,6 +192,7 @@ parse_result parse_expr (parser_ctx* ctx) {
     if (!right.is_ok) return right;
 
     left.result = ast_new_binary (ctx->a, lexer_token_to_char(op_tok.kind), left.result, right.result);
+    ast_set_pos(left.result, start, ast_get_end(right.result));
   }
 
   return left;

@@ -106,6 +106,8 @@ lexem_t lexer_peek_at (lexer_t* l, size_t idx);
 lexem_t lexer_consume_token (lexer_t* l);
 void lexer_throw_till_break (lexer_t* l);
 
+size_t lexer_get_start_byte(lexer_t* l);
+size_t lexer_get_end_byte  (lexer_t* l);
 size_t lexer_get_line (lexer_t* l);
 size_t lexer_get_char (lexer_t* l);
 
